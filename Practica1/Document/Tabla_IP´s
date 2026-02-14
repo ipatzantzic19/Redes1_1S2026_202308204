@@ -1,0 +1,105 @@
+# Tabla de Direcciones IP - Constructiva S.A.
+Red: 192.178.4.0/24
+Máscara: 255.255.255.0
+
+## 🏢 Piso 1
+
+### 🔹 Recepción (11 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| REC_PC1 | 192.178.4.1 |
+| REC_PC2 | 192.178.4.2 |
+| REC_PC3 | 192.178.4.3 |
+| REC_PC4 | 192.178.4.4 |
+| REC_PC5 | 192.178.4.5 |
+| REC_PC6 | 192.178.4.6 |
+| REC_PC7 | 192.178.4.7 |
+| REC_PC8 | 192.178.4.8 |
+| REC_PC9 | 192.178.4.9 |
+| REC_PC10 | 192.178.4.10 |
+| REC_PC11 | 192.178.4.11 |
+
+### 🔹 Contabilidad (8 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| CONT_PC1 | 192.178.4.20 |
+| CONT_PC2 | 192.178.4.21 |
+| CONT_PC3 | 192.178.4.22 |
+| CONT_PC4 | 192.178.4.23 |
+| CONT_PC5 | 192.178.4.24 |
+| CONT_PC6 | 192.178.4.25 |
+| CONT_PC7 | 192.178.4.26 |
+| CONT_PC8 | 192.178.4.27 |
+
+### 🔹 Legal (5 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| LEGAL_PC1 | 192.178.4.31 |
+| LEGAL_PC2 | 192.178.4.32 |
+| LEGAL_PC3 | 192.178.4.33 |
+| LEGAL_PC4 | 192.178.4.34 |
+| LEGAL_PC5 | 192.178.4.35 |
+
+### 🔹 Sala de Reuniones (5 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| REUN_PC1 | 192.178.4.41 |
+| REUN_PC2 | 192.178.4.42 |
+| REUN_PC3 | 192.178.4.43 |
+| REUN_PC4 | 192.178.4.44 |
+| REUN_PC5 | 192.178.4.45 |
+
+---
+
+## 🏢 Piso 2
+
+### 🔹 Arquitectura (6 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| ARQ_PC1 | 192.178.4.51 |
+| ARQ_PC2 | 192.178.4.52 |
+| ARQ_PC3 | 192.178.4.53 |
+| ARQ_PC4 | 192.178.4.54 |
+| ARQ_PC5 | 192.178.4.55 |
+| ARQ_PC6 | 192.178.4.56 |
+
+### 🔹 Urbanismo (5 PCs + 1 servidor)
+| Dispositivo | IP |
+|-------------|------|
+| URBA_PC1 | 192.178.4.61 |
+| URBA_PC2 | 192.178.4.62 |
+| URBA_PC3 | 192.178.4.63 |
+| URBA_PC4 | 192.178.4.64 |
+| URBA_PC5 | 192.178.4.65 |
+| URBA_SERVER | 192.178.4.66 |
+
+### 🔹 Sala de Planos (5 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| PLANOS_PC1 | 192.178.4.71 |
+| PLANOS_PC2 | 192.178.4.72 |
+| PLANOS_PC3 | 192.178.4.73 |
+| PLANOS_PC4 | 192.178.4.74 |
+| PLANOS_PC5 | 192.178.4.75 |
+
+---
+
+## 🏢 Piso 3
+
+### 🔹 Dirección General (4 PCs)
+| Dispositivo | IP |
+|-------------|------|
+| DIR_PC1 | 192.178.4.81 |
+| DIR_PC2 | 192.178.4.82 |
+| DIR_PC3 | 192.178.4.83 |
+| DIR_PC4 | 192.178.4.84 |
+
+### 🔹 Ingeniería Civil (5 PCs + 1 servidor)
+| Dispositivo | IP |
+|-------------|------|
+| ING_PC1 | 192.178.4.91 |
+| ING_PC2 | 192.178.4.92 |
+| ING_PC3 | 192.178.4.93 |
+| ING_PC4 | 192.178.4.94 |
+| ING_PC5 | 192.178.4.95 |
+
