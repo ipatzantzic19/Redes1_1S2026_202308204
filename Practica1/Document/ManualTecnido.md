@@ -132,6 +132,15 @@ Máscara: 255.255.255.0
 | ING_PC4 | 192.178.4.94 |
 | ING_PC5 | 192.178.4.95 |
 
+### Cuarto de Servidores (3 servidores)
+| Dispositivo | IP |
+|-------------|------|
+| SERVIDOR1 | 192.178.4.101 |
+| SERVIDOR2 | 192.178.4.102 |
+| SERVIDOR3 | 192.178.4.103 |
+
+---
+
 ## 4. Configuración de Dispositivos
 
 ### Configuración de Switches (CLI)
@@ -172,9 +181,11 @@ A continuación se muestra una captura de la configuración del hostname en uno 
 A cada PC y servidor se le asignó una dirección IP estática, la máscara de subred y la puerta de enlace predeterminada (aunque en esta topología de Capa 2 no se requiere un gateway, se mantiene el campo).
 
 **Evidencia de Configuración:**
-
+Configuración IP en una PC del departamento de Recepción:
 ![Configuración IP Estática en PC](img/IPV4_estaticas_PCS.png)
 
+**Evidencia de Configuración:** Configuración IP en un Servidor del departamento de Recepción:
+![Configuración IP Estática en Server](img/info_dispositivoFinal.png)
 ## 5. Cableado Estructurado (Estándar TIA/EIA-568B)
 
 Se utilizó el estándar TIA/EIA-568B para todo el cableado de la red, asegurando la compatibilidad y el rendimiento.

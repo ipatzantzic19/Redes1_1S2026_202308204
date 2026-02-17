@@ -18,6 +18,7 @@ Máscara: 255.255.255.0
 | REC_PC9 | 192.178.4.9 |
 | REC_PC10 | 192.178.4.10 |
 | REC_PC11 | 192.178.4.11 |
+| SERVER_REC_ADMIN | 192.178.4.12 |
 
 ### 🔹 Contabilidad (8 PCs)
 | Dispositivo | IP |
@@ -73,6 +74,7 @@ Máscara: 255.255.255.0
 | URBA_PC5 | 192.178.4.65 |
 | URBA_SERVER | 192.178.4.66 |
 
+
 ### 🔹 Sala de Planos (5 PCs)
 | Dispositivo | IP |
 |-------------|------|
@@ -102,4 +104,13 @@ Máscara: 255.255.255.0
 | ING_PC3 | 192.178.4.93 |
 | ING_PC4 | 192.178.4.94 |
 | ING_PC5 | 192.178.4.95 |
+| ING_SERVER | 192.178.4.96 |
 
+### Cuarto de Servidores (3 servidores)
+| Dispositivo | IP |
+|-------------|------|
+| SERVIDOR1 | 192.178.4.101 |
+| SERVIDOR2 | 192.178.4.102 |
+| SERVIDOR3 | 192.178.4.103 |
+
+---
