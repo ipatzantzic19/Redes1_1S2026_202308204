@@ -310,7 +310,7 @@ Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
 |---|---|---|---|
 | Visitantes1 | 54 – VISITANTE | 192.168.54.1 | 192.168.54.1 |
 | Visitantes2 | 54 – VISITANTE | 192.168.54.2 | 192.168.54.1 |
-| Visitantes3 (Laptop WiFi) | 54 – VISITANTE | 192.168.54.3 | 192.168.54.1 |
+| Visitantes3 | 54 – VISITANTE | 192.168.54.3 | 192.168.54.1 |
 | Admin4 | 14 – ADMIN | 192.168.14.14 | 192.168.14.1 |
 | Admin5 | 14 – ADMIN | 192.168.14.15 | 192.168.14.1 |
 | Docencia10 (Server) | 24 – DOCENTES | 192.168.24.110 | 192.168.24.1 |
