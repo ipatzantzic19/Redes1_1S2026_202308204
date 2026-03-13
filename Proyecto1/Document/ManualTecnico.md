@@ -1,13 +1,13 @@
-# 📘 Manual Técnico — Proyecto 1: NetCore Academy
+#  Manual Técnico — Proyecto 1: NetCore Academy
 **Curso:** Redes de Computadoras 1  
 **Universidad:** San Carlos de Guatemala — FIUSAC  
-**Estudiante:** _[Tu nombre completo]_  
+**Estudiante:** Ebed Isai Patzan Tzic  
 **Carnet:** `202308204`  
 **Fecha de entrega:** 13 de marzo de 2026  
 
 ---
 
-## 🔑 Datos de configuración personalizados
+##  Datos de configuración personalizados
 
 | Parámetro | Valor |
 |---|---|
@@ -26,7 +26,7 @@
 
 ---
 
-## 📋 Índice
+##  Índice
 
 1. [Topología General](#1-topología-general)
 2. [Topología por Edificio](#2-topología-por-edificio)
@@ -44,17 +44,7 @@
 ---
 
 ## 1. Topología General
-
-> 📸 **[CAPTURA REQUERIDA]** Inserta aquí una captura de pantalla de la topología completa en Cisco Packet Tracer mostrando los 4 edificios interconectados.
-
-```
-Edificio A ──(Fibra OM3 LACP EtherChannel)──────── Edificio B
-     │                                                   │
-  (Fibra OM3                                       (Fibra OM3
-   LACP EtherChannel)                            LACP EtherChannel)
-     │                                                   │
-Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
-```
+![Topología general del campus](<img/Topología General.png>)
 
 **Descripción:** El campus NetCore Academy está compuesto por 4 edificios interconectados mediante fibra óptica OM3 (100Base-FX). Los enlaces inter-edificio usan EtherChannel con **LACP** (carnet par). Cada edificio tiene su propio switch de agregación (Switch-PT con módulos de fibra FFE).
 
@@ -63,8 +53,7 @@ Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
 ## 2. Topología por Edificio
 
 ### 2.1 Edificio A
-
-> 📸 **[CAPTURA REQUERIDA]** Inserta captura del Edificio A en Packet Tracer.
+![Topología Edificio A](img/EdificioA.png)
 
 **Función:** Biblioteca, Docencia, Laboratorio  
 **Switch distribución:** SW-A1 (Switch-PT)  
@@ -90,7 +79,7 @@ Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
 
 ### 2.2 Edificio B
 
-> 📸 **[CAPTURA REQUERIDA]** Inserta captura del Edificio B en Packet Tracer.
+![Topología Edificio B](img/EdificioB.png)
 
 **Función:** Biblioteca y Administración  
 **Switches agregación:** SW-B1, SW-B2 (Switch-PT)  
@@ -118,7 +107,7 @@ Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
 
 ### 2.3 Edificio C
 
-> 📸 **[CAPTURA REQUERIDA]** Inserta captura del Edificio C en Packet Tracer.
+![Topología Edificio C](img/EdificioC.png)
 
 **Función:** Docencia y Biblioteca ligera  
 **Punto campus:** SW-C4 (Switch-PT)  
@@ -142,7 +131,7 @@ Edificio C ──(Fibra OM3 LACP EtherChannel)──── Edificio D
 
 ### 2.4 Edificio D
 
-> 📸 **[CAPTURA REQUERIDA]** Inserta captura del Edificio D en Packet Tracer.
+![Topología Edificio D](img/EdificioD.png)
 
 **Función:** Administración, Laboratorio, Visitantes  
 **IDF:** SW-D1 (Switch-PT)  
@@ -1067,8 +1056,6 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 
 ## 9. Pruebas de Ping
 
-> **Regla:** 1 ping exitoso (misma VLAN, diferente switch) + 1 ping fallido (diferente VLAN) por cada VLAN = **10 pruebas totales**.
-
 ### VLAN 14 — ADMIN
 
 | # | Origen | IP Origen | Destino | IP Destino | Resultado |
@@ -1076,7 +1063,7 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 | 1 | Admin2 — Ed.A | 192.168.14.2 | Admin3 — Ed.C | 192.168.14.13 | ✅ EXITOSO — misma VLAN, diferente edificio |
 | 2 | Admin2 — Ed.A | 192.168.14.2 | Biblioteca1 — Ed.B | 192.168.34.10 | ❌ FALLIDO — VLAN 14 vs VLAN 34 |
 
-> 📸 [Captura ping 1 — exitoso] | 📸 [Captura ping 2 — fallido]
+![VLAN 14 - ping exitoso y fallido](<img/VLAN 14 — ADMIN.png>)
 
 ---
 
@@ -1087,7 +1074,7 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 | 3 | Docencia8 — Ed.C | 192.168.24.18 | Docencia10 — Ed.D | 192.168.24.110 | ✅ EXITOSO — misma VLAN, diferente edificio |
 | 4 | Docencia8 — Ed.C | 192.168.24.18 | Admin4 — Ed.D | 192.168.14.14 | ❌ FALLIDO — VLAN 24 vs VLAN 14 |
 
-> 📸 [Captura ping 3 — exitoso] | 📸 [Captura ping 4 — fallido]
+![VLAN 24 - ping exitoso y fallido](<img/VLAN 24 — DOCENTES.png>)
 
 ---
 
@@ -1098,7 +1085,7 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 | 5 | Biblioteca1 — Ed.B | 192.168.34.10 | Biblioteca6 — Ed.C | 192.168.34.60 | ✅ EXITOSO — misma VLAN, diferente edificio |
 | 6 | Biblioteca1 — Ed.B | 192.168.34.10 | Laboratorio2 — Ed.A | 192.168.44.2 | ❌ FALLIDO — VLAN 34 vs VLAN 44 |
 
-> 📸 [Captura ping 5 — exitoso] | 📸 [Captura ping 6 — fallido]
+![VLAN 34 - ping exitoso y fallido](<img/VLAN 34 — BIBLIOTECA.png>)
 
 ---
 
@@ -1109,7 +1096,7 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 | 7 | Laboratorio2 — Ed.A | 192.168.44.2 | Laboratorio3 — Ed.D | 192.168.44.3 | ✅ EXITOSO — misma VLAN, diferente edificio |
 | 8 | Laboratorio2 — Ed.A | 192.168.44.2 | Docencia7 — Ed.C | 192.168.24.17 | ❌ FALLIDO — VLAN 44 vs VLAN 24 |
 
-> 📸 [Captura ping 7 — exitoso] | 📸 [Captura ping 8 — fallido]
+![VLAN 44 - ping exitoso y fallido](<img/VLAN 44 — LABORATORIOS.png>)
 
 ---
 
@@ -1120,56 +1107,35 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 | 9 | Visitantes1 — Ed.D | 192.168.54.1 | Visitantes2 — Ed.D | 192.168.54.2 | ✅ EXITOSO — misma VLAN, mismo switch |
 | 10 | Visitantes1 — Ed.D | 192.168.54.1 | Admin2 — Ed.A | 192.168.14.2 | ❌ FALLIDO — VLAN 54 vs VLAN 14 (además aislado por VTP Transparent) |
 
-> 📸 [Captura ping 9 — exitoso] | 📸 [Captura ping 10 — fallido]
+![VLAN 54 - ping exitoso y fallido](<img/VLAN 54 — VISITANTES.png>)
 
 ---
 
 ## 10. Capturas de Validación
 
 ### 10.1 show spanning-tree
-
-> 📸 **[CAPTURA REQUERIDA]** Ejecutar en SW-A1. Debe mostrar `This bridge is the root` en todas las VLANs (14, 24, 34, 44, 54).
-
-```
-SW-A1# show spanning-tree
-[INSERTAR CAPTURA]
-```
+![show spanning-tree VLAN 1](<img/show spanning-tree-vlan01.png>)
+![show spanning-tree VLAN 24](<img/show spanning-tree-vlan24.png>)
+![show spanning-tree VLAN 34](<img/show spanning-tree-vlan34.png>)
+![show spanning-tree VLAN 44](<img/show spanning-tree-vlan44.png>)
+![show spanning-tree VLAN 54](<img/show spanning-tree-vlan54.png>)
 
 ### 10.2 show etherchannel summary
-
-> 📸 **[CAPTURA REQUERIDA]** Ejecutar en SW-A1. Los Port-Channel deben mostrar flags `SU` (Layer2, in use).
-
-```
-SW-A1# show etherchannel summary
-[INSERTAR CAPTURA]
-```
+![show etherchannel summary](<img/show etherchannel summary.png>)
 
 ### 10.3 show interfaces trunk
-
-> 📸 **[CAPTURA REQUERIDA]** Ejecutar en SW-A1. Las VLANs 14,24,34,44,54 deben aparecer en "VLANs allowed and active in management domain".
-
-```
-SW-A1# show interfaces trunk
-[INSERTAR CAPTURA]
-```
+![show interfaces trunk](<img/show interfaces trunk.png>)
 
 ### 10.4 show vtp status — comparación de los 3 modos
 
-> 📸 **[CAPTURA REQUERIDA]** Ejecutar en SW-A1 (Server), SW-B1 (Client) y SW-E1 (Transparent) para demostrar los 3 modos.
-
-```
-SW-A1# show vtp status
-[CAPTURA — VTP Operating Mode: Server | Configuration Revision debe ser > 0]
-
-SW-B1# show vtp status
-[CAPTURA — VTP Operating Mode: Client | mismo Configuration Revision que Server]
-
-SW-E1# show vtp status
-[CAPTURA — VTP Operating Mode: Transparent | Configuration Revision: 0]
-```
+#### SW-A1# show vtp status
+![show vtp status - server](<img/show vtp status - server.png>)
+#### SW-B1# show vtp status
+![show vtp status - client](<img/show vtp status - client.png>)
+####  SW-E1# show vtp status
+![show vtp status - transparent](<img/show vtp status - transparent.png>)
 
 ---
-
 ## 11. Presupuesto Estimado
 
 ### Equipos activos
@@ -1208,72 +1174,6 @@ SW-E1# show vtp status
 | **TOTAL CON IVA** | **$10,037.44** |
 
 > Precios referenciales en USD. No incluye mano de obra de instalación.
-
----
-
-## 12. Fases de Implementación
-
-### ✅ FASE 1 — Topología física en Packet Tracer
-- [ ] Colocar todos los **Switch-PT** e instalar módulos **PT-SWITCH-NM-1FFE** (necesario para puertos de fibra)
-- [ ] Colocar todos los **Cisco 2960-24TT**
-- [ ] Conectar fibra OM3 **100Base-FX** entre edificios (2 enlaces por EtherChannel + 1 enlace D1↔D5)
-- [ ] Conectar **GigabitEthernet UTP Cat6** entre switches de distribución y acceso
-- [ ] Conectar **FastEthernet UTP Cat5e** a PCs, Laptops y dispositivos finales
-- [ ] Agregar **Hub-B1** (Edificio B) y **Hub-C1** (Edificio C) con sus conexiones
-- [ ] Agregar **Repeater-D1** entre SW-D2 y SW-D3
-- [ ] Agregar **AC-A1** (SW-A3) y **AC-D1** (SW-E1) y configurar sus SSID
-- [ ] Nombrar todos los dispositivos finales según la topología
-
-### ✅ FASE 2 — VTP y VLANs
-- [ ] Configurar **SW-A1 como VTP Server**, dominio `C2_NetCore`, versión 2
-- [ ] Crear las 5 VLANs en SW-A1: **14-ADMIN, 24-DOCENTES, 34-BIBLIOTECA, 44-LABORATORIO, 54-VISITANTE**
-- [ ] Configurar todos los demás switches (menos SW-E1) como **VTP Client**, mismo dominio
-- [ ] Configurar **SW-E1 como VTP Transparent** y crear VLAN 54 localmente
-- [ ] Verificar en un cliente con `show vlan brief` — debe mostrar las 5 VLANs
-
-### ✅ FASE 3 — Troncales 802.1Q
-- [ ] Configurar `switchport mode trunk` en todos los enlaces inter-switch
-- [ ] Ajustar `switchport trunk allowed vlan 14,24,34,44,54` en cada trunk
-- [ ] Verificar con `show interfaces trunk`
-
-### ✅ FASE 4 — EtherChannel
-- [ ] Configurar **LACP** (mode active) en los 5 EtherChannel inter-edificios
-- [ ] Configurar **PAgP** (mode desirable) en EtherChannel intra-edificio SW-A2↔SW-A3
-- [ ] Verificar con `show etherchannel summary` — estado debe ser **`SU`**
-
-### ✅ FASE 5 — STP PVST
-- [ ] Configurar `spanning-tree mode pvst` en todos los switches
-- [ ] Configurar `spanning-tree vlan 14,24,34,44,54 priority 4096` en SW-A1
-- [ ] Verificar con `show spanning-tree` — SW-A1 debe ser **ROOT BRIDGE** en todas las VLANs
-- [ ] Prueba de reconvergencia: deshabilitar un enlace con `shutdown` y verificar que STP recalcula
-
-### ✅ FASE 6 — Puertos de acceso y direccionamiento IP
-- [ ] Asignar cada puerto de acceso a su VLAN correspondiente en cada switch
-- [ ] Configurar IPs estáticas en todos los PCs, Laptops y Servers según la tabla de la sección 7
-- [ ] Conectar dispositivos WiFi al SSID del Access Point correspondiente
-
-### ✅ FASE 7 — Seguridad y Banners
-- [ ] Configurar `banner motd` en SW-A1, SW-B1, SW-C4, SW-D1 y SW-E1 (mínimo 1 por edificio = 5)
-- [ ] Configurar `enable secret cisco` y contraseñas de consola/vty en todos
-- [ ] Activar `vtp password proyecto12026` en **todos** los switches **(AL FINAL)**
-
-### ✅ FASE 8 — Verificación y documentación
-- [ ] Realizar las 10 pruebas de ping (sección 9) y capturar resultados
-- [ ] Capturar `show spanning-tree`, `show etherchannel summary`, `show interfaces trunk`
-- [ ] Capturar `show vtp status` en SW-A1, SW-B1 y SW-E1
-- [ ] Insertar capturas de topología completa y por edificio en las secciones correspondientes
-- [ ] Subir `README.md` y `Proyecto1_202308204.pkt` al repositorio antes del **13 de marzo 23:59**
-
----
-
-## 📁 Estructura del Repositorio
-
-```
-Redes1_1S_2026_202308204/
-└── Proyecto 1/
-    ├── README.md                    ← Este archivo (Manual Técnico)
-    └── Proyecto1_202308204.pkt      ← Topología completa en Packet Tracer
-```
 
 ---
 
