@@ -24,26 +24,7 @@ Se implementará enrutamiento estático para comunicar dos redes LAN a través d
 
 ## 2. Diagrama de la Topología
 
-```
- PC0 (192.168.4.10) ─┐                              ┌─ PC2 (10.0.4.10)
- PC1 (192.168.4.11) ─┤                              ├─ PC3 (10.0.4.11)
-                      │                              │
-                   [Sw0]                          [Sw1]
-                      │                              │
-         192.168.4.1/24│Fa0/0              Fa0/1│10.0.4.1/24
-                  ┌──[Router1]──┐      ┌──[Router2]──┐
-                  │    Fa0/1    │      │    Fa0/0    │
-                  │  11.0.4.1   │      │ 192.167.4.2 │
-                  └──────┬──────┘      └──────┬──────┘
-                         │                    │
-                    11.0.4.2/30       192.167.4.1/30
-                        Fa0/1              Fa0/0
-                        ┌────[Router0]────┐
-                        │   (Intermedio)  │
-                        └─────────────────┘
-```
-
-**Espacio para imagen:** captura de la topología final en Packet Tracer.
+![topo](img/topologia.png)
 
 ---
 
