@@ -1113,26 +1113,63 @@ Ejecutar en: SW-A1, SW-A2, SW-A3, SW-B1, SW-B2, SW-B3, SW-B4, SW-C4, SW-C1, SW-C
 
 ## 10. Capturas de Validación
 
-### 10.1 show spanning-tree
-![show spanning-tree VLAN 1](<img/show spanning-tree-vlan01.png>)
+### 10.1 Edificio A
+
+#### SW-A1#show spanning-tree
+![SW-A1 show spanning-tree](<img/show spanning-tree-vlan01.png>)
+
+#### SW-A1#show etherchannel summary
+![SW-A1 show etherchannel summary](<img/show etherchannel summary.png>)
+
+#### SW-A1#show interfaces trunk
+![SW-A1 show interfaces trunk](<img/show interfaces trunk.png>)
+
+### 10.2 Edificio B
+
+#### SW-B1#show spanning-tree
+![SW-B1 show spanning-tree](<img/show spanning-tree-EdicioB.png>)
+
+#### SW-B1#show etherchannel summary
+![SW-B1 show etherchannel summary](<img/show etherchannel summary EdificioB.png>)
+
+#### SW-B1#show interfaces trunk
+![SW-B1 show interfaces trunk](<img/trunk EdificioB.png>)
+
+### 10.3 Edificio C
+
+#### SW-C4#show spanning-tree
+![SW-C4 show spanning-tree](<img/show spanning-tree-edificioC.png>)
+
+#### SW-C4#show etherchannel summary
+![SW-C4 show etherchannel summary](<img/show etherchannel summary EdificioC.png>)
+
+#### SW-C4#show interfaces trunk
+![SW-C4 show interfaces trunk](<img/trunk edificioC.png>)
+
+### 10.4 Edificio D
+
+#### SW-D1#show spanning-tree
+![SW-D1 show spanning-tree](<img/show spanning-tree-EdificioD.png>)
+
+#### SW-D1#show etherchannel summary
+![SW-D1 show etherchannel summary](<img/show etherchannel summary EdificioD.png>)
+
+#### SW-D1#show interfaces trunk
+![SW-D1 show interfaces trunk](<img/trunk edificio D.png>)
+
+### 10.5 Evidencia STP por VLAN
 ![show spanning-tree VLAN 24](<img/show spanning-tree-vlan24.png>)
 ![show spanning-tree VLAN 34](<img/show spanning-tree-vlan34.png>)
 ![show spanning-tree VLAN 44](<img/show spanning-tree-vlan44.png>)
 ![show spanning-tree VLAN 54](<img/show spanning-tree-vlan54.png>)
 
-### 10.2 show etherchannel summary
-![show etherchannel summary](<img/show etherchannel summary.png>)
-
-### 10.3 show interfaces trunk
-![show interfaces trunk](<img/show interfaces trunk.png>)
-
-### 10.4 show vtp status — comparación de los 3 modos
+### 10.6 show vtp status — comparación de los 3 modos
 
 #### SW-A1# show vtp status
 ![show vtp status - server](<img/show vtp status - server.png>)
 #### SW-B1# show vtp status
 ![show vtp status - client](<img/show vtp status - client.png>)
-####  SW-E1# show vtp status
+#### SW-E1# show vtp status
 ![show vtp status - transparent](<img/show vtp status - transparent.png>)
 
 ---
