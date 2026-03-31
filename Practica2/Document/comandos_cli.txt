@@ -1,0 +1,631 @@
+! ============================================================
+! SCRIPT COMPLETO — PRÁCTICA 2: RED DE HOSPITALES METROPOLITANO
+! Carnet: 20238204 | Redes de Computadoras 1 | USAC 2026
+! Último dígito X=4 | VLANs: 14, 24, 34, 44, 99, 999
+! Redes: 192.168.4.0/24 y 192.168.5.0/24
+! ============================================================
+
+
+! ============================================================
+! SW-CORE — SWITCH CENTRAL (VTP Servidor / Root Bridge)
+! ============================================================
+
+enable
+configure terminal
+hostname SW-CORE
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+banner motd # Red Hospitales Metropolitano - Solo Acceso Autorizado - Carnet 20238204 #
+
+! --- VTP Servidor ---
+vtp mode server
+vtp domain 20238204
+vtp password area1
+vtp version 2
+
+! --- Crear VLANs (solo en servidor VTP) ---
+vlan 14
+ name Quirofanos
+exit
+vlan 24
+ name UCI_Cuidados_Intensivos
+exit
+vlan 34
+ name Administracion
+exit
+vlan 44
+ name Urgencias_Emergencias
+exit
+vlan 99
+ name VLAN_Nativa_Troncal
+exit
+vlan 999
+ name Blackhole_No_Usar
+exit
+
+! --- STP Rapid PVST+ y Root Bridge ---
+spanning-tree mode rapid-pvst
+spanning-tree vlan 14 root primary
+spanning-tree vlan 24 root primary
+spanning-tree vlan 34 root primary
+spanning-tree vlan 44 root primary
+spanning-tree vlan 99 root primary
+spanning-tree vlan 999 root primary
+
+! --- EtherChannel PAgP hacia SW-H1 (channel-group 1) ---
+interface range GigabitEthernet0/1 - 2
+ channel-group 1 mode desirable
+ exit
+interface FastEthernet0/24
+ channel-group 1 mode desirable
+ exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- EtherChannel PAgP hacia SW-H2 (channel-group 2) ---
+interface range FastEthernet0/21 - 23
+ channel-group 2 mode desirable
+exit
+interface port-channel 2
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- Puertos troncales hacia SW-H3, H4, H5, H6 (sin EtherChannel en estos) ---
+interface FastEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+interface FastEthernet0/2
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+interface FastEthernet0/3
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+interface FastEthernet0/4
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- SVI para administración (VLAN 99) ---
+interface vlan 99
+ ip address 192.168.5.129 255.255.255.240
+ no shutdown
+exit
+
+! --- Puertos no utilizados → VLAN 999 ---
+interface range FastEthernet0/5 - 20
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+end
+write memory
+
+! ============================================================
+! VERIFICACIÓN SW-CORE
+! ============================================================
+show vlan brief
+show vtp status
+show spanning-tree
+show etherchannel summary
+show interfaces trunk
+show ip interface brief
+
+
+! ============================================================
+! SW-H1 — HOSPITAL ROOSEVELT (VTP Cliente)
+! Hosts mínimos: 63 | Dominios de colisión: 3
+! Diseño: 1 Switch + 2 Hubs
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H1-Roosevelt
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+! --- VTP Cliente ---
+vtp mode client
+vtp domain 20238204
+vtp password area1
+
+! --- STP Rapid PVST+ ---
+spanning-tree mode rapid-pvst
+
+! --- EtherChannel PAgP hacia SW-CORE (channel-group 1) ---
+interface range GigabitEthernet0/1 - 2
+ channel-group 1 mode auto
+exit
+interface FastEthernet0/24
+ channel-group 1 mode auto
+exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- Puertos de acceso VLAN 14 (Quirófanos) ---
+interface range FastEthernet0/1 - 5
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+! --- Puertos de acceso VLAN 24 (UCI) ---
+interface range FastEthernet0/6 - 9
+ switchport mode access
+ switchport access vlan 24
+ spanning-tree portfast
+exit
+
+! --- Puertos de acceso VLAN 34 (Administración) ---
+interface range FastEthernet0/10 - 13
+ switchport mode access
+ switchport access vlan 34
+ spanning-tree portfast
+exit
+
+! --- Puertos de acceso VLAN 44 (Urgencias) ---
+interface range FastEthernet0/14 - 17
+ switchport mode access
+ switchport access vlan 44
+ spanning-tree portfast
+exit
+
+! --- Puertos para hubs (crean dominios de colisión adicionales) ---
+! Hub-A en FastEthernet0/18 → dominio de colisión 2
+! Hub-B en FastEthernet0/19 → dominio de colisión 3
+interface FastEthernet0/18
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface FastEthernet0/19
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+! --- Puertos no utilizados → VLAN 999 ---
+interface range FastEthernet0/20 - 23
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+! --- SVI administración ---
+interface vlan 99
+ ip address 192.168.5.130 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! SW-H2 — HOSPITAL SAN JUAN DE DIOS (VTP Cliente)
+! Hosts mínimos: 25 | Dominios de colisión: 2
+! Diseño: 1 Switch + 1 Hub
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H2-SanJuan
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+vtp mode client
+vtp domain 20238204
+vtp password area1
+
+spanning-tree mode rapid-pvst
+
+! --- EtherChannel PAgP hacia SW-CORE (channel-group 2) ---
+interface range FastEthernet0/22 - 24
+ channel-group 2 mode auto
+exit
+interface port-channel 2
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- Puertos de acceso ---
+interface range FastEthernet0/1 - 4
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface range FastEthernet0/5 - 8
+ switchport mode access
+ switchport access vlan 24
+ spanning-tree portfast
+exit
+interface range FastEthernet0/9 - 12
+ switchport mode access
+ switchport access vlan 34
+ spanning-tree portfast
+exit
+interface range FastEthernet0/13 - 16
+ switchport mode access
+ switchport access vlan 44
+ spanning-tree portfast
+exit
+
+! --- Puerto para Hub (dominio de colisión 2) ---
+interface FastEthernet0/17
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+! --- Puertos no utilizados ---
+interface range FastEthernet0/18 - 21
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+interface vlan 99
+ ip address 192.168.5.131 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! SW-H3 — HOSPITAL IGSS (VTP Cliente)
+! Hosts mínimos: 32 | Dominios de colisión: 3
+! Diseño: 1 Switch + 2 Hubs
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H3-IGSS
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+vtp mode client
+vtp domain 20238204
+vtp password area1
+spanning-tree mode rapid-pvst
+
+! --- Troncal hacia SW-CORE ---
+interface FastEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+interface range FastEthernet0/2 - 6
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface range FastEthernet0/7 - 11
+ switchport mode access
+ switchport access vlan 24
+ spanning-tree portfast
+exit
+interface range FastEthernet0/12 - 15
+ switchport mode access
+ switchport access vlan 34
+ spanning-tree portfast
+exit
+interface range FastEthernet0/16 - 19
+ switchport mode access
+ switchport access vlan 44
+ spanning-tree portfast
+exit
+interface FastEthernet0/20
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface FastEthernet0/21
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+interface range FastEthernet0/22 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+interface vlan 99
+ ip address 192.168.5.132 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! SW-H4 — HOSPITAL ORTOPEDIA (VTP Cliente)
+! Hosts mínimos: 15 | Dominios de colisión: 2
+! Diseño: 1 Switch + 1 Hub
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H4-Ortopedia
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+vtp mode client
+vtp domain 20238204
+vtp password area1
+spanning-tree mode rapid-pvst
+
+interface FastEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+interface range FastEthernet0/2 - 5
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface range FastEthernet0/6 - 9
+ switchport mode access
+ switchport access vlan 24
+ spanning-tree portfast
+exit
+interface range FastEthernet0/10 - 12
+ switchport mode access
+ switchport access vlan 34
+ spanning-tree portfast
+exit
+interface range FastEthernet0/13 - 15
+ switchport mode access
+ switchport access vlan 44
+ spanning-tree portfast
+exit
+interface FastEthernet0/16
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+interface range FastEthernet0/17 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+interface vlan 99
+ ip address 192.168.5.133 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! SW-H5 — HOSPITAL INFANTIL (VTP Cliente)
+! Hosts mínimos: 26 | Dominios de colisión: 2
+! Diseño: 1 Switch + 1 Hub
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H5-Infantil
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+vtp mode client
+vtp domain 20238204
+vtp password area1
+spanning-tree mode rapid-pvst
+
+interface FastEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+interface range FastEthernet0/2 - 6
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+interface range FastEthernet0/7 - 11
+ switchport mode access
+ switchport access vlan 24
+ spanning-tree portfast
+exit
+interface range FastEthernet0/12 - 16
+ switchport mode access
+ switchport access vlan 34
+ spanning-tree portfast
+exit
+interface range FastEthernet0/17 - 20
+ switchport mode access
+ switchport access vlan 44
+ spanning-tree portfast
+exit
+interface FastEthernet0/21
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+interface range FastEthernet0/22 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+interface vlan 99
+ ip address 192.168.5.134 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! SW-H6 — HOSPITAL CENTRO MÉDICO MILITAR (VTP Cliente)
+! Hosts mínimos: 8 | Dominios de colisión: 1
+! Diseño: 1 Hub único (el switch solo actúa como uplink al core)
+! ============================================================
+
+enable
+configure terminal
+hostname SW-H6-Militar
+enable secret 20238204
+line console 0
+ password 20238204
+ login
+exit
+line vty 0 4
+ password 20238204
+ login
+exit
+service password-encryption
+no ip domain-lookup
+
+vtp mode client
+vtp domain 20238204
+vtp password area1
+spanning-tree mode rapid-pvst
+
+interface FastEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 14,24,34,44,99
+exit
+
+! --- Puerto hacia el Hub (todo el hospital en 1 dominio de colisión) ---
+interface FastEthernet0/2
+ switchport mode access
+ switchport access vlan 14
+ spanning-tree portfast
+exit
+
+interface range FastEthernet0/3 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+
+interface vlan 99
+ ip address 192.168.5.135 255.255.255.240
+ no shutdown
+exit
+ip default-gateway 192.168.5.129
+
+end
+write memory
+
+
+! ============================================================
+! COMANDOS DE VERIFICACIÓN GENERAL (ejecutar en cada switch)
+! ============================================================
+
+! En todos los switches:
+show vlan brief
+show vtp status
+show spanning-tree
+show interfaces trunk
+show ip interface brief
+show running-config
+
+! En SW-CORE:
+show etherchannel summary
+show spanning-tree vlan 14
+show spanning-tree vlan 24
+show spanning-tree vlan 34
+show spanning-tree vlan 44
+
+! Pruebas de conectividad (ejecutar desde PCs):
+! Ping VLAN 14: 192.168.4.2 -> 192.168.4.10 (Roosevelt a San Juan)
+! Ping VLAN 24: 192.168.4.130 -> 192.168.4.140
+! Ping VLAN 34: 192.168.4.194 -> 192.168.4.200
+! Ping VLAN 44: 192.168.5.2 -> 192.168.5.10
+
+! ============================================================
+! FIN DEL SCRIPT — Carnet 20238204
+! ============================================================
