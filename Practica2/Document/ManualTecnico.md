@@ -33,7 +33,7 @@ La red de salud nacional requiere modernizar la infraestructura de comunicación
 | Carnet | 20238204 |
 | Último dígito (X) | **4** |
 | Dígitos XX para subnetting | **4** |
-| Dominio VTP | `20238204` |
+| Dominio VTP | `202308204` |
 | Red base | `192.168.4.0/24`, `192.168.5.0/24`, `192.168.6.0/24` |
 
 ### Fórmula VLAN ID
@@ -63,7 +63,7 @@ Se seleccionaron 6 hospitales reales del área metropolitana de Guatemala:
 
 ### Tipo de Topología: Estrella Extendida (Híbrida)
 
-Se utiliza una **topología de estrella** entre hospitales, con un **switch central (Core Switch)** que interconecta los switches principales de cada hospital. Dentro de cada hospital se utiliza una topología interna con switches y hubs según los dominios de colisión requeridos.
+Se utiliza una **topología de estrella extendida** entre hospitales, con un **switch central (Core Switch)** que interconecta los switches principales de H1-H5 y el switch de H6. Dentro de cada hospital, los equipos de usuario se conectan a **hubs de acceso** para que cada dominio de colisión quede delimitado de forma exacta.
 
 **Justificación:**
 - La topología estrella centraliza la administración y facilita el aislamiento de fallas.
@@ -81,7 +81,9 @@ Se utiliza una **topología de estrella** entre hospitales, con un **switch cent
               [SW-H1] [SW-H2][SW-H3][SW-H4][SW-H5][SW-H6]
 ```
 
-> **📸 INSERTAR CAPTURA:** Topología completa en Cisco Packet Tracer (vista general de todos los hospitales conectados al core switch).
+![Topología General de la Red](img/topologia.png.png)
+
+*Figura: Vista general de todos los hospitales conectados al core switch en Cisco Packet Tracer.*
 
 ---
 
@@ -95,28 +97,26 @@ Se utiliza una **topología de estrella** entre hospitales, con un **switch cent
 
 | Hospital | Hosts Mínimos | Dominios Requeridos | Diseño Propuesto |
 |----------|--------------|---------------------|-----------------|
-| H-ROOSE (H1) | 63 | 3 | 1 Switch principal + 2 Hubs (cada hub = 1 dominio; switch crea 1 dominio para uplink) |
-| H-SJDIOS (H2) | 25 | 2 | 1 Switch principal + 1 Hub |
-| H-IGSS (H3) | 32 | 3 | 1 Switch principal + 2 Hubs |
-| H-ORTOP (H4) | 15 | 2 | 1 Switch principal + 1 Hub |
-| H-INFANT (H5) | 26 | 2 | 1 Switch principal + 1 Hub |
+| H-ROOSE (H1) | 63 | 3 | 1 Switch principal + 3 Hubs |
+| H-SJDIOS (H2) | 25 | 2 | 1 Switch principal + 2 Hubs |
+| H-IGSS (H3) | 32 | 3 | 1 Switch principal + 3 Hubs |
+| H-ORTOP (H4) | 15 | 2 | 1 Switch principal + 2 Hubs |
+| H-INFANT (H5) | 26 | 2 | 1 Switch principal + 2 Hubs |
 | H-MILITA (H6) | 8 | 1 | 1 Hub único (todo en el mismo dominio de colisión) |
 
 ### Explicación Técnica
 
 **Hospital 1 — 3 dominios de colisión:**
 ```
-[SW-H1] ──── [HUB-A] ──── PCs (dominio 1 = HUB-A)
-          └── [HUB-B] ──── PCs (dominio 2 = HUB-B)
-          └── Puerto uplink al Core (dominio 3 = segmento switch)
+[SW-H1] ──── [HUB-A] ──── PCs (dominio 1)
+          └── [HUB-B] ──── PCs (dominio 2)
+          └── [HUB-C] ──── PCs (dominio 3)
 ```
 
 **Hospital 6 — 1 dominio de colisión:**
 ```
 [HUB] ──── PC1, PC2, PC3 ... PC8  (todo un solo dominio)
 ```
-
-> **📸 INSERTAR CAPTURA:** Vista interna de cada hospital mostrando switches y hubs en Packet Tracer.
 
 ---
 
@@ -140,8 +140,6 @@ Se utiliza una **topología de estrella** entre hospitales, con un **switch cent
 - **VLAN 44 (Urgencias):** Acceso rápido a sistemas de triaje y registro de pacientes.
 - **VLAN 99 (Nativa):** Estándar de seguridad para troncales; evita VLAN hopping en VLAN 1.
 - **VLAN 999 (Blackhole):** Puertos no utilizados asignados aquí para prevenir acceso no autorizado.
-
-> **📸 INSERTAR CAPTURA:** Salida del comando `show vlan brief` en el switch principal mostrando todas las VLANs configuradas.
 
 ---
 
@@ -167,14 +165,13 @@ Se realiza subnetting para asignar **una subred por VLAN por grupo de hospitales
 | 44 | Urgencias | 192.168.5.0 | 255.255.255.128 | /25 | 192.168.5.1 | 192.168.5.2 – 192.168.5.126 | 192.168.5.127 | 126 |
 | 99 | Nativa (mgmt) | 192.168.5.128 | 255.255.255.240 | /28 | 192.168.5.129 | 192.168.5.130 – 192.168.5.142 | 192.168.5.143 | 14 |
 
+
 #### Justificación de Máscaras
 - **VLAN 14 (/25 → 126 hosts):** Quirófanos concentra el mayor número de dispositivos médicos y PCs entre los 6 hospitales (total estimado: ~80 hosts).
 - **VLAN 24 (/26 → 62 hosts):** UCI tiene equipos de monitoreo pero en menor cantidad.
 - **VLAN 34 (/26 → 62 hosts):** Personal administrativo distribuido en 6 hospitales.
 - **VLAN 44 (/25 → 126 hosts):** Urgencias requiere capacidad alta para registros y triaje.
-- **VLAN 99 (/28 → 14 hosts):** Solo para interfaces de administración de switches (6 switches + core).
-
-> **📸 INSERTAR CAPTURA:** Tabla de subnetting en el documento o captura del cálculo en una herramienta.
+- **VLAN 99 (/28 → 14 hosts):** Solo para interfaces de administracion de switches (SW-CORE + SW-H1 a SW-H5).
 
 ---
 
@@ -184,20 +181,27 @@ Se realiza subnetting para asignar **una subred por VLAN por grupo de hospitales
 | Parámetro | Valor |
 |-----------|-------|
 | Dominio | `20238204` |
-| Contraseña Área 1 | `area1` |
-| Contraseña Área 2 | `area2` |
-| Contraseña Área 3 | `area3` |
-| Contraseña Área 4 | `area4` |
+| Contraseña VTP | `area1` |
 | Switch Servidor | Core Switch (SW-CORE) |
-| Switches Clientes | SW-H1, SW-H2, SW-H3, SW-H4, SW-H5, SW-H6 |
+| Switches Clientes | SW-H1, SW-H2, SW-H3, SW-H4, SW-H5 |
 | Versión VTP | 2 |
+
+![VTP Status - Servidor](img/show%20vtp%20status%20-%20server%20%28SW-CORE%29.png)
+
+*Figura: Salida de `show vtp status` en el switch servidor (SW-CORE), modo server, dominio 202308204.*
+
+![VTP Status - Cliente](img/show%20vtp%20status%20-%20client%20%28SW-H1%29.png)
+
+*Figura: Salida de `show vtp status` en un switch cliente (SW-H1), confirmando sincronización del dominio.*
+
+> VTP usa una sola contraseña por dominio. En esta práctica, todos los switches comparten `area1` para coincidir con la configuración real.
 
 ### Comandos — Switch Servidor (SW-CORE)
 
 ```
 SW-CORE# configure terminal
 SW-CORE(config)# vtp mode server
-SW-CORE(config)# vtp domain 20238204
+SW-CORE(config)# vtp domain 202308204
 SW-CORE(config)# vtp password area1
 SW-CORE(config)# vtp version 2
 SW-CORE(config)# end
@@ -209,13 +213,11 @@ SW-CORE# show vtp status
 ```
 SW-H1# configure terminal
 SW-H1(config)# vtp mode client
-SW-H1(config)# vtp domain 20238204
+SW-H1(config)# vtp domain 202308204
 SW-H1(config)# vtp password area1
 SW-H1(config)# end
 SW-H1# show vtp status
 ```
-
-> **📸 INSERTAR CAPTURA:** Salida de `show vtp status` en el switch servidor y en al menos un cliente, mostrando sincronización del dominio.
 
 ---
 
@@ -238,6 +240,22 @@ SW-CORE(config)# end
 SW-CORE# show spanning-tree vlan 14
 ```
 
+![Spanning-Tree VLAN 1 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part1.png)
+
+![Spanning-Tree VLAN 14 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part2.png)
+
+![Spanning-Tree VLAN 24 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part3.png)
+
+![Spanning-Tree VLAN 34 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part4.png)
+
+![Spanning-Tree VLAN 44 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part5.png)
+
+![Spanning-Tree VLAN 99 (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part6.png)
+
+![Spanning-Tree Resumen (SW-CORE)](img/show%20spanning-tree-%20SWCORE-%20part7.png)
+
+*Figura: Salida de `show spanning-tree` en el switch central, mostrando SW-CORE como Root Bridge para todas las VLANs.*
+
 ### Configuración Switches de Acceso (ejemplo SW-H1)
 
 ```
@@ -254,14 +272,12 @@ El **SW-CORE** es elegido como Root Bridge porque:
 3. Tiene la mayor capacidad de procesamiento.
 4. Garantiza que los caminos óptimos siempre pasen por el núcleo.
 
-> **📸 INSERTAR CAPTURA:** Salida de `show spanning-tree` mostrando SW-CORE como Root Bridge con estado "This bridge is the root".
-
 ---
 
 ## 9. EtherChannel (PAgP)
 
 ### Descripción
-Se agrupan **3 enlaces físicos** entre el SW-CORE y los switches principales de hospital usando el protocolo **PAgP (Port Aggregation Protocol)** de Cisco.
+Se agrupan **3 enlaces fisicos** entre el SW-CORE y los switches principales de hospital (H1-H5) usando el protocolo **PAgP (Port Aggregation Protocol)** de Cisco.
 
 ### Parámetros EtherChannel
 | Parámetro | Valor |
@@ -287,6 +303,10 @@ SW-CORE(config-if)# end
 SW-CORE# show etherchannel summary
 ```
 
+![EtherChannel Summary - SW-CORE](img/show%20etherchannel%20summary%20-SWCORE.png)
+
+*Figura: Salida de `show etherchannel summary` en SW-CORE, mostrando Port-Channel activo en estado "P" (bundled).*
+
 ### Comandos — SW-H1
 
 ```
@@ -302,7 +322,9 @@ SW-H1(config-if)# end
 SW-H1# show etherchannel summary
 ```
 
-> **📸 INSERTAR CAPTURA:** Salida de `show etherchannel summary` mostrando el Port-Channel en estado "SU" (bundled y up).
+![EtherChannel Summary - SW-H1](img/show%20etherchannel%20summary-%20SWH1.png)
+
+*Figura: Salida de `show etherchannel summary` en SW-H1, mostrando el Port-Channel en estado "P" (bundled).*
 
 ---
 
@@ -415,9 +437,19 @@ SW-H1(config-if)# exit
 SW-H1(config)# ip default-gateway 192.168.5.129
 ```
 
-> **📸 INSERTAR CAPTURA:** Salida de `show running-config` del switch principal mostrando todas las configuraciones aplicadas.
+![Running-Config Parte 1 (SW-CORE)](img/show%20running-config%20-part1.png)
 
-> **📸 INSERTAR CAPTURA:** Salida de `show interfaces trunk` mostrando los puertos troncales activos con la VLAN nativa 99.
+![Running-Config Parte 2 (SW-CORE)](img/show%20running-config%20-part2.png)
+
+![Running-Config Parte 3 (SW-CORE)](img/show%20running-config%20-part3.png)
+
+![Running-Config Parte 4 (SW-CORE)](img/show%20running-config%20-part4.png)
+
+*Figura: Salida de `show running-config` del switch central (SW-CORE), mostrando todas las configuraciones aplicadas.*
+
+![Interfaces Trunk](img/show%20interfaces%20trunk.png)
+
+*Figura: Salida de `show interfaces trunk` mostrando los puertos troncales activos con VLAN nativa 99 y VLANs permitidas.*
 
 ---
 
@@ -480,9 +512,6 @@ SW-H1(config)# ip default-gateway 192.168.5.129
 | SW-H3 (SVI) | 192.168.5.132 | 255.255.255.240 | 192.168.5.129 |
 | SW-H4 (SVI) | 192.168.5.133 | 255.255.255.240 | 192.168.5.129 |
 | SW-H5 (SVI) | 192.168.5.134 | 255.255.255.240 | 192.168.5.129 |
-| SW-H6 (SVI) | 192.168.5.135 | 255.255.255.240 | 192.168.5.129 |
-
-> **📸 INSERTAR CAPTURA:** Pantalla de configuración IP de al menos 2 PCs en diferentes VLANs (ventana de propiedades en Packet Tracer).
 
 ---
 
@@ -491,38 +520,18 @@ SW-H1(config)# ip default-gateway 192.168.5.129
 ### 12.1 Pruebas Dentro de la Misma VLAN (deben ser exitosas ✅)
 
 #### VLAN 14 — Quirófanos
-```
-PC-Q-H1-1> ping 192.168.4.10
-! (ping de Roosevelt a San Juan de Dios, misma VLAN 14)
-```
-> **📸 INSERTAR CAPTURA:** Resultado del ping exitoso entre PCs de VLAN 14 (mínimo 10 pings exitosos).
 
-```
-PC-Q-H2-1> ping 192.168.4.20
-! (ping de San Juan de Dios a IGSS, misma VLAN 14)
-```
-> **📸 INSERTAR CAPTURA:** Resultado del ping VLAN 14 - segundo par de dispositivos.
 
 #### VLAN 24 — UCI
-```
-PC-U-H1-1> ping 192.168.4.140
-! (ping de Roosevelt a San Juan de Dios, misma VLAN 24)
-```
-> **📸 INSERTAR CAPTURA:** Resultado del ping exitoso entre PCs de VLAN 24.
+
+
 
 #### VLAN 34 — Administración
-```
-PC-A-H1-1> ping 192.168.4.200
-! (ping de Roosevelt a San Juan de Dios, misma VLAN 34)
-```
-> **📸 INSERTAR CAPTURA:** Resultado del ping exitoso entre PCs de VLAN 34.
+
+
 
 #### VLAN 44 — Urgencias
-```
-PC-E-H1-1> ping 192.168.5.10
-! (ping de Roosevelt a San Juan de Dios, misma VLAN 44)
-```
-> **📸 INSERTAR CAPTURA:** Resultado del ping exitoso entre PCs de VLAN 44.
+
 
 ### 12.2 Pruebas Entre VLANs Distintas (deben fallar ❌ — correcto comportamiento)
 
@@ -530,7 +539,6 @@ PC-E-H1-1> ping 192.168.5.10
 PC-Q-H1-1> ping 192.168.4.130
 ! (intento de ping de VLAN 14 a VLAN 24 — DEBE FALLAR)
 ```
-> **📸 INSERTAR CAPTURA:** Ping fallido entre VLANs distintas (confirma aislamiento correcto).
 
 ### 12.3 Resumen de Pruebas
 
@@ -547,6 +555,18 @@ PC-Q-H1-1> ping 192.168.4.130
 | 9 | PC-E-H3-1 (5.20) | PC-E-H5-1 (5.40) | 44→44 | ✅ Exitoso |
 | 10 | PC-E-H5-1 (5.40) | PC-E-H6-1 (5.50) | 44→44 | ✅ Exitoso |
 | 11 | PC-Q-H1-1 (4.2) | PC-U-H1-1 (4.130) | 14→24 | ❌ Falla (aislamiento) |
+
+### Evidencia de Pruebas Exitosas
+
+![Pings Exitosos - VLANs Múltiples](img/ping%20varios%20correctos%20vlans.png)
+
+*Figura: Varios pings exitosos dentro de diferentes VLANs, confirmando conectividad correcta entre hospitales.*
+
+### Evidencia de Pruebas Fallidas
+
+![Ping Fallido - Entre VLANs](img/ping%20fallido.png)
+
+*Figura: Ping fallido entre VLANs distintas, confirmando el aislamiento correcto de las VLANs.*
 
 ---
 
@@ -575,9 +595,13 @@ Paso 3: PC-Q-H1-1 actualiza su tabla ARP
         → Ahora conoce MAC↔IP de PC-Q-H2-1
 ```
 
-> **📸 INSERTAR CAPTURA:** Vista del modo simulación mostrando el paquete ARP Request en VLAN 14 (sobre de color diferente en la animación de Packet Tracer).
+### 13.2b Detalles del Paquete ARP
 
-> **📸 INSERTAR CAPTURA:** Detalle del paquete ARP en la ventana de simulación (PDU Information) mostrando: MAC origen, MAC destino FF:FF:FF:FF:FF:FF, IP origen e IP destino.
+En modo simulación de Packet Tracer, se pueden observar los siguientes detalles:
+- **MAC Origen:** Dirección MAC de PC-Q-H1-1
+- **MAC Destino:** FF:FF:FF:FF:FF:FF (dirección de broadcast)
+- **IP Origen:** Dirección IP de PC-Q-H1-1 (192.168.4.2)
+- **IP Destino:** Dirección IP consultada (192.168.4.10)
 
 ### 13.3 Flujo ICMP (ping)
 
@@ -591,15 +615,12 @@ Paso 2: ICMP Echo Reply
         Protocolo: ICMP Type 0 (Echo Reply)
 ```
 
-> **📸 INSERTAR CAPTURA:** Detalle del paquete ICMP en modo simulación mostrando Type, Code y datos del paquete.
-
 ### 13.4 Comportamiento en VLANs Diferentes
 
 Cuando se intenta hacer ping entre VLAN 14 y VLAN 24:
 - El ARP Request de VLAN 14 **no llega** a hosts de VLAN 24 (el switch no reenvía broadcast entre VLANs diferentes sin un router).
 - El ping falla con "Request Timeout".
-
-> **📸 INSERTAR CAPTURA:** Modo simulación mostrando que el paquete ARP no cruza entre VLANs (queda detenido en el switch).
+- Esto confirma el **aislamiento correcto de las VLANs**, que es el comportamiento esperado.
 
 ---
 
@@ -631,6 +652,3 @@ Cuando se intenta hacer ping entre VLAN 14 y VLAN 24:
 > En Cisco Packet Tracer, se selecciona automáticamente el tipo de cable correcto usando "Copper Straight-through" o "Copper Cross-over" según corresponde.
 
 ---
-
-*Fin del Manual Técnico*  
-*Carnet: 20238204 | Redes de Computadoras 1 | USAC 2026*
