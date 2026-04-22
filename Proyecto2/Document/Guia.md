@@ -610,30 +610,30 @@ exit
 
 ```
 configure terminal
-interface GigabitEthernet0/1
+interface FastEthernet1/0
  no ip address
  no shutdown
 exit
 
-interface GigabitEthernet0/1.14
+interface FastEthernet1/0.14
  description SUBINTERFACE-VLAN-Cajas
  encapsulation dot1Q 14
  ip address 192.168.10.1 255.255.255.192
 exit
 
-interface GigabitEthernet0/1.24
+interface FastEthernet1/0.24
  description SUBINTERFACE-VLAN-Asesores
  encapsulation dot1Q 24
  ip address 192.168.10.65 255.255.255.224
 exit
 
-interface GigabitEthernet0/1.34
+interface FastEthernet1/0.34
  description SUBINTERFACE-VLAN-Gerencia
  encapsulation dot1Q 34
  ip address 192.168.10.113 255.255.255.240
 exit
 
-interface GigabitEthernet0/1.44
+interface FastEthernet1/0.44
  description SUBINTERFACE-VLAN-Seguridad
  encapsulation dot1Q 44
  ip address 192.168.10.97 255.255.255.240
@@ -758,22 +758,22 @@ exit
 ### Paso 3.5 — Configurar Router-on-a-Stick en R-Norte
 
 ```
-interface GigabitEthernet0/1
+interface FastEthernet1/0
  no ip address
  no shutdown
 exit
 
-interface GigabitEthernet0/1.54
+interface FastEthernet1/0.54
  encapsulation dot1Q 54
  ip address 192.168.20.1 255.255.255.192
 exit
 
-interface GigabitEthernet0/1.64
+interface FastEthernet1/0.64
  encapsulation dot1Q 64
  ip address 192.168.20.65 255.255.255.224
 exit
 
-interface GigabitEthernet0/1.74
+interface FastEthernet1/0.74
  encapsulation dot1Q 74
  ip address 192.168.20.97 255.255.255.240
 exit
@@ -1023,22 +1023,22 @@ exit
 ### Paso 5.5 — Configurar Router-on-a-Stick en R-Central2
 
 ```
-interface GigabitEthernet0/1
+interface FastEthernet1/0
  no ip address
  no shutdown
 exit
 
-interface GigabitEthernet0/1.14
+interface FastEthernet1/0.14
  encapsulation dot1Q 14
  ip address 192.168.40.33 255.255.255.240
 exit
 
-interface GigabitEthernet0/1.24
+interface FastEthernet1/0.24
  encapsulation dot1Q 24
  ip address 192.168.40.1 255.255.255.224
 exit
 
-interface GigabitEthernet0/1.34
+interface FastEthernet1/0.34
  encapsulation dot1Q 34
  ip address 192.168.40.49 255.255.255.240
 exit
