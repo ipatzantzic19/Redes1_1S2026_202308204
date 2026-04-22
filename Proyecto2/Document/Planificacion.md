@@ -66,16 +66,16 @@ Bloque asignado para backbone: **10.10.0.0/24** → dividido en /30 para cada en
 
 | Enlace | Red | Máscara | Gateway A | Gateway B | Broadcast |
 |--------|-----|---------|-----------|-----------|-----------|
-| Core1 ↔ Core2 (EtherChannel/fibra) | 10.10.0.0 | /30 | 10.10.0.1 | 10.10.0.2 | 10.10.0.3 |
-| Core1 ↔ Core3 (Ethernet) | 10.10.0.4 | /30 | 10.10.0.5 | 10.10.0.6 | 10.10.0.7 |
-| Core2 ↔ Core3 (redundancia) | 10.10.0.8 | /30 | 10.10.0.9 | 10.10.0.10 | 10.10.0.11 |
-| Core1 ↔ R-Occidente (EIGRP) | 10.10.0.12 | /30 | 10.10.0.13 | 10.10.0.14 | 10.10.0.15 |
-| Core2 ↔ R-Norte (RIPv2) | 10.10.0.16 | /30 | 10.10.0.17 | 10.10.0.18 | 10.10.0.19 |
-| Core3 ↔ MS1-Oriente (OSPF) | 10.10.0.20 | /30 | 10.10.0.21 | 10.10.0.22 | 10.10.0.23 |
-| Core3 ↔ MS2-Oriente (OSPF redundancia) | 10.10.0.24 | /30 | 10.10.0.25 | 10.10.0.26 | 10.10.0.27 |
-| Core1 ↔ R-Central1 (estáticas) | 10.10.0.28 | /30 | 10.10.0.29 | 10.10.0.30 | 10.10.0.31 |
-| Core2 ↔ R-Central2 (estáticas) | 10.10.0.32 | /30 | 10.10.0.33 | 10.10.0.34 | 10.10.0.35 |
-| Enlace Serial WAN (simulado) | 10.10.0.36 | /30 | 10.10.0.37 | 10.10.0.38 | 10.10.0.39 |
+| Core1 (SW) ↔ Core2 (SW) (EtherChannel/fibra, GigE1/1/1-2-PC1) | 10.10.0.0 | /30 | 10.10.0.1 | 10.10.0.2 | 10.10.0.3 |
+| Core1 (SW) ↔ Core3 (Router) (GigE1/1/3-GigE0/0) | 10.10.0.4 | /30 | 10.10.0.5 | 10.10.0.6 | 10.10.0.7 |
+| Core2 (SW) ↔ Core3 (Router) (GigE1/1/3-GigE0/1) | 10.10.0.8 | /30 | 10.10.0.9 | 10.10.0.10 | 10.10.0.11 |
+| Core1 (SW) ↔ R-Occidente (GigE1/1/4-GigE0/0) EIGRP | 10.10.0.12 | /30 | 10.10.0.13 | 10.10.0.14 | 10.10.0.15 |
+| Core2 (SW) ↔ R-Norte (GigE1/1/4-GigE0/0) RIPv2 | 10.10.0.16 | /30 | 10.10.0.17 | 10.10.0.18 | 10.10.0.19 |
+| Core3 (Router) ↔ MS1-Oriente (GigE0/2-GigE0/1) OSPF | 10.10.0.20 | /30 | 10.10.0.21 | 10.10.0.22 | 10.10.0.23 |
+| Core3 (Router) ↔ MS2-Oriente (GigE0/3-GigE0/1) OSPF | 10.10.0.24 | /30 | 10.10.0.25 | 10.10.0.26 | 10.10.0.27 |
+| Core1 (SW) ↔ R-Central1 (GigE1/1/5-GigE0/0) estáticas | 10.10.0.28 | /30 | 10.10.0.29 | 10.10.0.30 | 10.10.0.31 |
+| Core2 (SW) ↔ R-Central2 (GigE1/1/5-GigE0/0) estáticas | 10.10.0.32 | /30 | 10.10.0.33 | 10.10.0.34 | 10.10.0.35 |
+| Core3 (Router) ↔ Serial WAN (Serial0/0/0) | 10.10.0.36 | /30 | 10.10.0.37 | 10.10.0.38 | 10.10.0.39 |
 
 ---
 
@@ -145,36 +145,43 @@ Orden de subnetting: de mayor a menor número de hosts.
 ```
 
 **Dispositivos del Backbone:**
-- **Core1** — Router principal, redistribuye OSPF ↔ EIGRP (punto de redistribución 1)
-- **Core2** — Router secundario, redistribuye OSPF ↔ RIPv2 (punto de redistribución 2)
-- **Core3** — Router terciario, conecta a Oriente (OSPF) y gestiona enlace serial WAN
-- **MS1 y MS2** — Switches multicapa en Oriente (predefinidos por backbone)
+- **Core1** — Multilayer Switch 3650-24PS (IP Routing habilitado) 
+  - Puertos: GigE1/1/1-2 (EtherChannel fibra), GigE1/1/3 (Core3), GigE1/1/4 (R-Occidente), GigE1/1/5 (R-Central1)
+  - Rol: OSPF + EIGRP (redistribuyente)
+- **Core2** — Multilayer Switch 3650-24PS (IP Routing habilitado)
+  - Puertos: GigE1/1/1-2 (EtherChannel fibra), GigE1/1/3 (Core3), GigE1/1/4 (R-Norte), GigE1/1/5 (R-Central2)
+  - Rol: OSPF + RIPv2 (redistribuyente)
+- **Core3** — Router 4331 o 2911
+  - Puertos: GigE0/0 (Core1), GigE0/1 (Core2), GigE0/2 (MS1), GigE0/3 (MS2), Serial0/0/0 (WAN)
+  - Rol: OSPF + Enlace Serial WAN
+- **MS1 y MS2** — Switches multicapa en Oriente (con IP Routing)
 
 ### 4.2 Dominios de Enrutamiento
 
-| Dominio | Protocolo | Sedes cubiertas | Router frontera |
-|---------|-----------|-----------------|-----------------|
-| Principal | OSPF Area 0 | Backbone completo + Oriente | Core1, Core2, Core3 |
-| Expansión Regional | EIGRP AS 100 | Occidente | R-Occidente, Core1 |
-| Red Legada | RIPv2 | Norte | R-Norte, Core2 |
+| Dominio | Protocolo | Sedes cubiertas | Dispositivos frontera |
+|---------|-----------|-----------------|------------------|
+| Principal | OSPF Area 0 | Backbone completo + Oriente | Core1 (SW), Core2 (SW), Core3 |
+| Expansión Regional | EIGRP AS 100 | Occidente | R-Occidente, Core1 (SW) |
+| Red Legada | RIPv2 | Norte | R-Norte, Core2 (SW) |
 | Alta Seguridad | Estáticas | Data Center + Central | R-Central1, R-Central2 |
 
 ### 4.3 Redistribución de Rutas
 
 | Punto de Redistribución | Redistribuye |
 |------------------------|--------------|
-| Core1 | OSPF → EIGRP y EIGRP → OSPF |
-| Core2 | OSPF → RIPv2 y RIPv2 → OSPF |
+| Core1 (Switch) | OSPF ↔ EIGRP y EIGRP ↔ OSPF |
+| Core2 (Switch) | OSPF ↔ RIPv2 y RIPv2 ↔ OSPF |
 | R-Central1 | Estáticas → OSPF |
 
 ### 4.4 Medios Físicos del Backbone
 
-| Enlace | Medio | Justificación |
-|--------|-------|---------------|
-| Core1 ↔ Core2 | Fibra óptica (EtherChannel LACP) | Mayor ancho de banda, menor latencia en núcleo |
-| Core1 ↔ Core3 | Ethernet Gigabit | Interconexión local rápida |
-| Core3 ↔ Serial | Enlace Serial | Simulación de WAN remota |
-| Backbone ↔ Sedes | Ethernet estándar | Conectividad de borde |
+| Enlace | Medio | Puertos | Justificación |
+|--------|-------|--------|----------------|
+| Core1(SW) ↔ Core2(SW) | Fibra óptica (EtherChannel LACP) | GigE1/1/1-2 (PC1) | Mayor ancho de banda, menor latencia en núcleo |
+| Core1(SW) ↔ Core3 | Ethernet Gigabit | GigE1/1/3 ↔ GigE0/0 | Interconexion local rápida |
+| Core2(SW) ↔ Core3 | Ethernet Gigabit | GigE1/1/3 ↔ GigE0/1 | Redundancia del núcleo |
+| Core3 ↔ Serial WAN | Enlace Serial | Serial0/0/0 | Simulación de WAN remota |
+| Backbone ↔ Sedes | Ethernet Gigabit | GigE1/1/4-5 (SW) | Conectividad de borde |
 
 ---
 
@@ -259,16 +266,16 @@ Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel 
 | VLANs + 802.1Q | Todas | Segmentación del tráfico |
 | VTP (Server/Client) | Occidente, Norte | Propagación centralizada de VLANs |
 | Router-on-a-Stick | Occidente | Inter-VLAN en R-Occidente |
-| OSPF Area 0 | Backbone | Protocolo de enrutamiento del núcleo |
-| EIGRP AS 100 | Occidente ↔ Backbone | Expansión regional |
-| RIPv2 | Norte ↔ Backbone | Red legada |
+| OSPF Area 0 | Backbone | Protocolo de enrutamiento del núcleo (Core1 SW, Core2 SW, Core3) |
+| EIGRP AS 100 | Occidente ↔ Backbone | Expansión regional (Core1 SW) |
+| RIPv2 | Norte ↔ Backbone | Red legada (Core2 SW) |
 | Rutas Estáticas | Data Center ↔ Backbone | Alta seguridad |
-| Redistribución | Core1, Core2, R-Central1 | Interoperabilidad entre dominios |
+| Redistribución | Core1 (SW), Core2 (SW), R-Central1 | Interoperabilidad entre dominios |
 | Rapid PVST+ | Norte | Evitar tormentas de broadcast en anillo |
 | HSRP | Oriente (MS1, MS2) | Redundancia de gateway |
 | EtherChannel (LACP) | Backbone + Data Center | Agregación de ancho de banda |
-| Fibra óptica | Backbone Core1↔Core2 | Enlace de alta velocidad |
-| Enlace Serial | Backbone | Simulación WAN |
+| Fibra óptica | Backbone Core1(SW) ↔ Core2(SW) | GigE1/1/1-2 (PC1) - EtherChannel LACP | Enlace de alta velocidad |
+| Enlace Serial | Backbone Core3 | Serial0/0/0 (módulo WIC-2T) | Simulación WAN |
 | VLSM | Todas las sedes | Optimización de direcciones IP |
 | FLSM /30 | Backbone P2P | Direccionamiento de enlaces |
 
@@ -295,9 +302,10 @@ Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel 
 ## 8. Checklist de Verificación Final
 
 ### Backbone
-- [ ] Tres routers de capa 3 en el núcleo
-- [ ] EtherChannel en enlace principal (fibra)
-- [ ] OSPF configurado y convergido
+- [ ] Dos Multilayer Switches 3650-24PS en el núcleo (Core1, Core2) con IP Routing habilitado
+- [ ] Un Router de capa 3 (Core3) para enlace serial WAN
+- [ ] EtherChannel LACP en enlace principal (fibra óptica) entre Core1 y Core2
+- [ ] OSPF configurado y convergido (Core1, Core2, Core3, MS1, MS2)
 - [ ] EIGRP configurado y convergido (AS 100)
 - [ ] RIPv2 configurado y convergido
 - [ ] Rutas estáticas configuradas

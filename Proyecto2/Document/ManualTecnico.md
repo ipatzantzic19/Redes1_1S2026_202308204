@@ -35,7 +35,9 @@ Este documento constituye el Manual Técnico oficial del Proyecto 2 de Redes de 
 
 La infraestructura diseñada responde a los requerimientos de negocio de una institución bancaria que exige continuidad operativa 24/7, segmentación segura del tráfico transaccional, redundancia en todos los niveles críticos y convergencia entre múltiples dominios de enrutamiento.
 
-El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comercial), **Norte** (Centro de Autorización de Créditos), **Oriente** (Centro Financiero Legado) y **Data Center/Central** (Alta Seguridad); todas interconectadas a través de un **Backbone Nacional** con protocolos de enrutamiento diferenciados.
+El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comercial), **Norte** (Centro de Autorización de Créditos), **Oriente** (Centro Financiero Legado) y **Data Center/Central** (Alta Seguridad); todas interconectadas a través de un **Backbone Nacional** conformado por:
+- **Multilayer Switches 3650-24PS con IP Routing habilitado** (Core1, Core2) para OSPF + EIGRP/RIPv2 (redistribución)
+- **Router de capa 3** (Core3) para OSPF + enlace Serial WAN
 
 ---
 
@@ -49,7 +51,8 @@ El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comerc
 | Dominio VTP | `bantech04` |
 | Password VTP | `cisco` |
 | Herramienta de simulación | Cisco Packet Tracer 8.x |
-| Protocolos de enrutamiento | OSPF, EIGRP, RIPv2, Estáticas |
+| **Dispositivos Backbone** | **Core1:** Multilayer Switch 3650-24PS (IP Routing) | **Core2:** Multilayer Switch 3650-24PS (IP Routing) | **Core3:** Router 4331/2911 |
+| Protocolos de enrutamiento | OSPF Area 0, EIGRP AS 100, RIPv2, Rutas Estáticas |
 | Protocolos de redundancia | HSRP, Rapid PVST+, EtherChannel LACP |
 
 ---
@@ -96,18 +99,18 @@ El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comerc
 
 ### 4.1 Backbone Core — FLSM /30 (Bloque: 10.10.0.0/24)
 
-| Enlace | Red | Máscara | IP Router A | IP Router B | Broadcast |
-|--------|-----|---------|-------------|-------------|-----------|
-| Core1 ↔ Core2 (EtherChannel/fibra) | 10.10.0.0 | /30 | 10.10.0.1 (Core1) | 10.10.0.2 (Core2) | 10.10.0.3 |
-| Core1 ↔ Core3 (Ethernet) | 10.10.0.4 | /30 | 10.10.0.5 (Core1) | 10.10.0.6 (Core3) | 10.10.0.7 |
-| Core2 ↔ Core3 (redundancia) | 10.10.0.8 | /30 | 10.10.0.9 (Core2) | 10.10.0.10 (Core3) | 10.10.0.11 |
-| Core1 ↔ R-Occidente (EIGRP) | 10.10.0.12 | /30 | 10.10.0.13 (Core1) | 10.10.0.14 (R-Occ) | 10.10.0.15 |
-| Core2 ↔ R-Norte (RIPv2) | 10.10.0.16 | /30 | 10.10.0.17 (Core2) | 10.10.0.18 (R-Norte) | 10.10.0.19 |
-| Core3 ↔ MS1-Oriente (OSPF) | 10.10.0.20 | /30 | 10.10.0.21 (Core3) | 10.10.0.22 (MS1) | 10.10.0.23 |
-| Core3 ↔ MS2-Oriente (OSPF) | 10.10.0.24 | /30 | 10.10.0.25 (Core3) | 10.10.0.26 (MS2) | 10.10.0.27 |
-| Core1 ↔ R-Central1 (estáticas) | 10.10.0.28 | /30 | 10.10.0.29 (Core1) | 10.10.0.30 (R-C1) | 10.10.0.31 |
-| Core2 ↔ R-Central2 (estáticas) | 10.10.0.32 | /30 | 10.10.0.33 (Core2) | 10.10.0.34 (R-C2) | 10.10.0.35 |
-| Core3 ↔ Serial WAN | 10.10.0.36 | /30 | 10.10.0.37 (Core3) | 10.10.0.38 | 10.10.0.39 |
+| Enlace | Red | Máscara | IP Core1(SW) / Core3 | IP Core2(SW) / R-Xx | Broadcast |
+|--------|-----|---------|----------------------|---------------------|-----------|
+| Core1 (SW) ↔ Core2 (SW) (EtherChannel/fibra) | 10.10.0.0 | /30 | 10.10.0.1 (GigE1/1/1-2 PC1) | 10.10.0.2 (GigE1/1/1-2 PC1) | 10.10.0.3 |
+| Core1 (SW) ↔ Core3 (Router) (GigE1/1/3-GigE0/0) | 10.10.0.4 | /30 | 10.10.0.5 (GigE1/1/3) | 10.10.0.6 (GigE0/0) | 10.10.0.7 |
+| Core2 (SW) ↔ Core3 (Router) (GigE1/1/3-GigE0/1) | 10.10.0.8 | /30 | 10.10.0.9 (GigE1/1/3) | 10.10.0.10 (GigE0/1) | 10.10.0.11 |
+| Core1 (SW) ↔ R-Occidente (GigE1/1/4-GigE0/0) (EIGRP) | 10.10.0.12 | /30 | 10.10.0.13 (GigE1/1/4) | 10.10.0.14 (GigE0/0) | 10.10.0.15 |
+| Core2 (SW) ↔ R-Norte (GigE1/1/4-GigE0/0) (RIPv2) | 10.10.0.16 | /30 | 10.10.0.17 (GigE1/1/4) | 10.10.0.18 (GigE0/0) | 10.10.0.19 |
+| Core3 (Router) ↔ MS1-Oriente (GigE0/2-GigE0/1) (OSPF) | 10.10.0.20 | /30 | 10.10.0.21 (GigE0/2) | 10.10.0.22 (GigE0/1) | 10.10.0.23 |
+| Core3 (Router) ↔ MS2-Oriente (GigE0/3-GigE0/1) (OSPF) | 10.10.0.24 | /30 | 10.10.0.25 (GigE0/3) | 10.10.0.26 (GigE0/1) | 10.10.0.27 |
+| Core1 (SW) ↔ R-Central1 (GigE1/1/5-GigE0/0) (estáticas) | 10.10.0.28 | /30 | 10.10.0.29 (GigE1/1/5) | 10.10.0.30 (GigE0/0) | 10.10.0.31 |
+| Core2 (SW) ↔ R-Central2 (GigE1/1/5-GigE0/0) (estáticas) | 10.10.0.32 | /30 | 10.10.0.33 (GigE1/1/5) | 10.10.0.34 (GigE0/0) | 10.10.0.35 |
+| Core3 (Router) ↔ Serial WAN (GigE0/4-Serial0/0/0) | 10.10.0.36 | /30 | 10.10.0.37 (Serial0/0/0) | 10.10.0.38 | 10.10.0.39 |
 
 ---
 
@@ -163,8 +166,11 @@ El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comerc
 
 ### 5.1 Descripción General
 
-El Backbone Nacional de BanTech GT representa el núcleo transaccional que interconecta las cuatro sedes del corporativo. Está conformado por **tres routers de capa 3** (Core1, Core2, Core3) que conforman un núcleo redundante con múltiples rutas entre sí, garantizando tolerancia a fallos en el nivel más crítico de la red.
-
+El Backbone Nacional de BanTech GT representa el núcleo transaccional que interconecta las cuatro sedes del corporativo. Está conformado por **dos Multilayer Switches 3650-24PS** (Core1, Core2) con IP Routing habilitado y **un Router de capa 3** (Core3) que conforman un núcleo redundante con múltiples rutas entre sí, garantizando tolerancia a fallos en el nivel más crítico de la red.
+**Configuración de dispositivos:**
+- **Core1 (Switch):** IP Routing habilitado | Puertos: GigE1/1/1-2 (EtherChannel fibra), GigE1/1/3 (Core3), GigE1/1/4 (R-Occidente), GigE1/1/5 (R-Central1)
+- **Core2 (Switch):** IP Routing habilitado | Puertos: GigE1/1/1-2 (EtherChannel fibra), GigE1/1/3 (Core3), GigE1/1/4 (R-Norte), GigE1/1/5 (R-Central2)
+- **Core3 (Router):** Puertos: GigE0/0 (Core1), GigE0/1 (Core2), GigE0/2 (MS1), GigE0/3 (MS2), Serial0/0/0 (WAN)
 ### 5.2 Topología del Backbone
 
 ```
@@ -197,30 +203,30 @@ El Backbone Nacional de BanTech GT representa el núcleo transaccional que inter
 
 ### 5.3 Dominios de Enrutamiento
 
-| Dominio | Protocolo | Router(s) | Sede asociada |
-|---------|-----------|-----------|---------------|
-| Núcleo principal | **OSPF Area 0** | Core1, Core2, Core3, MS1, MS2 | Backbone + Oriente |
-| Expansión regional | **EIGRP AS 100** | Core1, R-Occidente | Sede Occidente |
-| Red legada | **RIPv2** | Core2, R-Norte | Sede Norte |
-| Alta seguridad | **Rutas estáticas** | R-Central1, R-Central2, Core1, Core2 | Data Center |
+| Dominio | Protocolo | Dispositivos | Sede asociada |
+|---------|-----------|---------|---------------|
+| Núcleo principal | **OSPF Area 0** | Core1 (SW), Core2 (SW), Core3, MS1, MS2 | Backbone + Oriente |
+| Expansión regional | **EIGRP AS 100** | Core1 (SW), R-Occidente | Sede Occidente |
+| Red legada | **RIPv2** | Core2 (SW), R-Norte | Sede Norte |
+| Alta seguridad | **Rutas estáticas** | R-Central1, R-Central2, Core1 (SW), Core2 (SW) | Data Center |
 
 ### 5.4 Puntos de Redistribución
 
-| Punto | Redistribuye | Justificación |
-|-------|-------------|---------------|
-| **Core1** | OSPF ↔ EIGRP (bidireccional) | Es el router más cercano a Occidente y con mayor capacidad de cómputo en el núcleo |
-| **Core2** | OSPF ↔ RIPv2 (bidireccional) | Es el router frontera hacia Norte, dominio legado |
-| **R-Central1** | Estáticas → OSPF | El segmento de alta seguridad debe anunciarse al backbone de forma controlada |
+| Punto | Dispositivo | Tipo | Redistribuye | Justificación |
+|-------|------------|------|-------------|----------------|
+| **Punto 1** | Core1 | Switch Multicapa | OSPF ↔ EIGRP (bidireccional) | IP Routing habilitado, nexo entre OSPF del backbone y EIGRP de Occidente |
+| **Punto 2** | Core2 | Switch Multicapa | OSPF ↔ RIPv2 (bidireccional) | IP Routing habilitado, frontera entre OSPF del backbone y RIPv2 de Norte |
+| **Punto 3** | R-Central1 | Router | Estáticas → OSPF | Anuncia Data Center al backbone de forma controlada |
 
 ### 5.5 Medios Físicos del Backbone
 
-| Enlace | Medio | Velocidad simulada |
-|--------|-------|--------------------|
-| Core1 ↔ Core2 | **Fibra óptica** (EtherChannel LACP, 2 interfaces) | Doble ancho de banda |
-| Core1 ↔ Core3 | Ethernet Gigabit | 1 Gbps |
-| Core2 ↔ Core3 | Ethernet Gigabit (redundancia núcleo) | 1 Gbps |
-| Core3 ↔ Serial | Enlace Serial (WIC-2T) | 64 Kbps (simulación WAN) |
-| Backbone ↔ Sedes | Ethernet Gigabit | 1 Gbps |
+| Enlace | Medio | Puertos Core1/Core2/Core3 | Velocidad simulada |
+|--------|-------|-----------------------|-----------|
+| **Core1 (SW) ↔ Core2 (SW)** | **Fibra óptica** (EtherChannel LACP, Port-channel1) | GigE1/1/1, GigE1/1/2 (ambos) | Doble ancho de banda |
+| Core1 (SW) ↔ Core3 (Router) | Ethernet Gigabit | GigE1/1/3 ↔ GigE0/0 | 1 Gbps |
+| Core2 (SW) ↔ Core3 (Router) | Ethernet Gigabit (redundancia) | GigE1/1/3 ↔ GigE0/1 | 1 Gbps |
+| Core3 (Router) ↔ Serial WAN | Enlace Serial (WIC-2T) | Serial0/0/0 | 64 Kbps (simulación WAN) |
+| Backbone ↔ Sedes | Ethernet Gigabit | GigE1/1/4-5 (Core1/2) ↔ GigE0/x | 1 Gbps |
 
 ### 5.6 Topología implementada en Packet Tracer
 

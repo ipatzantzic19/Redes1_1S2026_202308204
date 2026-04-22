@@ -17,18 +17,23 @@
 
 1. Abre Cisco Packet Tracer.
 2. Arrastra los siguientes dispositivos al área de trabajo:
-   - **3 Routers** modelo `4331` o `2911` → renombrarlos: `Core1`, `Core2`, `Core3`
+   - **2 Multilayer Switches** modelo `3650-24PS` → renombrarlos: `Core1` (Switch), `Core2` (Switch)
+     - **Rol:** Núcleo principal con EtherChannel LACP (fibra óptica, puertos GigE1/1/1 y GigE1/1/2)
+     - **Capacidad:** IP Routing habilitado para OSPF + EIGRP (Core1) / OSPF + RIPv2 (Core2)
+   - **1 Router** modelo `4331` o `2911` → renombrar: `Core3` (Router)
+     - **Rol:** Conexión a sedes (Oriente) y enlace Serial WAN
+     - **Capacidad:** OSPF + enlace serial
    - **2 Routers adicionales** para redistribución: `R-Central1`, `R-Central2` (zona Data Center)
    - **1 Router** por sede de borde: `R-Occidente`, `R-Norte`
    - **2 Multilayer Switches** (modelo 3560 o 3650): `MS1`, `MS2` (para Oriente)
-3. Para simular fibra óptica entre Core1 y Core2: usar conexión con módulo de fibra (o en PT, cable Ethernet Gigabit etiquetado como fibra en la documentación).
+3. Para simular fibra óptica entre Core1 y Core2: usar conexión con 2 cables Ethernet Gigabit en puertos **GigabitEthernet0/0** y **GigabitEthernet0/1** (etiquetados como fibra en la documentación) → Agregar a EtherChannel LACP.
 4. Para enlace serial: agregar módulo `WIC-2T` a Core3 (clic en router → pestaña Physical → insertar módulo en slot disponible con router apagado).
 
 ---
 
 ### Paso 1.2 — Configurar hostnames y contraseñas básicas
 
-Repetir en **CADA dispositivo** del backbone (Core1, Core2, Core3, R-Occidente, R-Norte, R-Central1, R-Central2, MS1, MS2):
+Repetir en **CADA dispositivo** del backbone (Core1 [Switch], Core2 [Switch], Core3 [Router], R-Occidente, R-Norte, R-Central1, R-Central2, MS1, MS2):
 
 ```
 enable
@@ -48,16 +53,39 @@ exit
 
 ---
 
-### Paso 1.3 — Configurar EtherChannel LACP entre Core1 y Core2
+### Paso 1.3 — Configurar IP Routing en Core1 y Core2
 
-Este enlace representa el canal principal de fibra óptica del backbone. Usa mínimo 2 interfaces físicas.
+Como estos son Multilayer Switches, es obligatorio habilitar enrutamiento IP para permitir OSPF y redistribución de rutas.
 
 **En Core1:**
 ```
 configure terminal
-interface range GigabitEthernet0/0 , GigabitEthernet0/1
- channel-group 1 mode active
+ip routing
+exit
+```
+
+**En Core2:**
+```
+configure terminal
+ip routing
+exit
+```
+
+---
+
+### Paso 1.4 — Configurar EtherChannel LACP entre Core1 y Core2
+
+Este enlace representa el canal principal de fibra óptica del backbone. Usa 2 interfaces físicas Gigabit agregadas (puertos GigE1/1/1 y GigE1/1/2).
+
+**En Core1 (Multilayer Switch):**
+```
+configure terminal
+interface range GigabitEthernet1/1/1, GigabitEthernet1/1/2
+ no switchport
  no shutdown
+exit
+interface range GigabitEthernet1/1/1, GigabitEthernet1/1/2
+ channel-group 1 mode active
 exit
 interface Port-channel1
  description ETHERCHANNEL-FIBRA-Core1-Core2
@@ -66,12 +94,15 @@ interface Port-channel1
 exit
 ```
 
-**En Core2:**
+**En Core2 (Multilayer Switch):**
 ```
 configure terminal
-interface range GigabitEthernet0/0 , GigabitEthernet0/1
- channel-group 1 mode active
+interface range GigabitEthernet1/1/1, GigabitEthernet1/1/2
+ no switchport
  no shutdown
+exit
+interface range GigabitEthernet1/1/1, GigabitEthernet1/1/2
+ channel-group 1 mode active
 exit
 interface Port-channel1
  description ETHERCHANNEL-FIBRA-Core2-Core1
@@ -82,20 +113,21 @@ exit
 
 ---
 
-### Paso 1.4 — Configurar enlaces punto a punto restantes del backbone
+### Paso 1.5 — Configurar enlaces punto a punto restantes del backbone
 
-**Core1 ↔ Core3 (Ethernet):**
+**Core1 (Switch) ↔ Core3 (Router) - Ethernet Gigabit:**
 
-En Core1:
+En Core1 (Switch - puerto GigE1/1/3):
 ```
-interface GigabitEthernet0/2
+interface GigabitEthernet1/1/3
  description ENLACE-Core1-Core3
+ no switchport
  ip address 10.10.0.5 255.255.255.252
  no shutdown
 exit
 ```
 
-En Core3:
+En Core3 (Router - puerto GigE0/0):
 ```
 interface GigabitEthernet0/0
  description ENLACE-Core3-Core1
@@ -104,18 +136,19 @@ interface GigabitEthernet0/0
 exit
 ```
 
-**Core2 ↔ Core3 (redundancia del núcleo):**
+**Core2 (Switch) ↔ Core3 (Router) - Redundancia del núcleo:**
 
-En Core2:
+En Core2 (Switch - puerto GigE1/1/3):
 ```
-interface GigabitEthernet0/2
+interface GigabitEthernet1/1/3
  description ENLACE-Core2-Core3
+ no switchport
  ip address 10.10.0.9 255.255.255.252
  no shutdown
 exit
 ```
 
-En Core3:
+En Core3 (Router - puerto GigE0/1):
 ```
 interface GigabitEthernet0/1
  description ENLACE-Core3-Core2
@@ -138,14 +171,15 @@ exit
 
 ---
 
-### Paso 1.5 — Configurar enlaces backbone hacia sedes de borde
+### Paso 1.6 — Configurar enlaces backbone hacia sedes de borde
 
-**Core1 ↔ R-Occidente:**
+**Core1 (Switch) ↔ R-Occidente (Router) - Conexión sede Occidente:**
 
-En Core1:
+En Core1 (Switch - puerto GigE1/1/4):
 ```
-interface GigabitEthernet0/3
+interface GigabitEthernet1/1/4
  description ENLACE-Core1-R-Occidente
+ no switchport
  ip address 10.10.0.13 255.255.255.252
  no shutdown
 exit
@@ -160,12 +194,13 @@ interface GigabitEthernet0/0
 exit
 ```
 
-**Core2 ↔ R-Norte:**
+**Core2 (Switch) ↔ R-Norte (Router) - Conexión sede Norte:**
 
-En Core2:
+En Core2 (Switch - puerto GigE1/1/4):
 ```
-interface GigabitEthernet0/3
+interface GigabitEthernet1/1/4
  description ENLACE-Core2-R-Norte
+ no switchport
  ip address 10.10.0.17 255.255.255.252
  no shutdown
 exit
@@ -220,18 +255,19 @@ interface GigabitEthernet0/1
 exit
 ```
 
-**Core1 ↔ R-Central1 y Core2 ↔ R-Central2 (Data Center, estáticas):**
+**Core1 (Switch) ↔ R-Central1 (Router) - Data Center:**
 
-En Core1:
+En Core1 (Switch - puerto GigE1/1/5):
 ```
-interface GigabitEthernet0/4
+interface GigabitEthernet1/1/5
  description ENLACE-Core1-R-Central1
+ no switchport
  ip address 10.10.0.29 255.255.255.252
  no shutdown
 exit
 ```
 
-En R-Central1:
+En R-Central1 (Router - puerto GigE0/0):
 ```
 interface GigabitEthernet0/0
  description ENLACE-R-Central1-Core1
@@ -240,16 +276,19 @@ interface GigabitEthernet0/0
 exit
 ```
 
-En Core2:
+**Core2 (Switch) ↔ R-Central2 (Router) - Data Center:**
+
+En Core2 (Switch - puerto GigE1/1/5):
 ```
-interface GigabitEthernet0/4
+interface GigabitEthernet1/1/5
  description ENLACE-Core2-R-Central2
+ no switchport
  ip address 10.10.0.33 255.255.255.252
  no shutdown
 exit
 ```
 
-En R-Central2:
+En R-Central2 (Router - puerto GigE0/0):
 ```
 interface GigabitEthernet0/0
  description ENLACE-R-Central2-Core2
@@ -260,9 +299,9 @@ exit
 
 ---
 
-### Paso 1.6 — Configurar OSPF Area 0 en el Backbone
+### Paso 1.7 — Configurar OSPF Area 0 en el Backbone
 
-OSPF corre en los 3 routers del core y también en MS1, MS2 (Oriente).
+OSPF corre en **Core1 y Core2 (como Multilayer Switches con IP Routing habilitado)**, **Core3 (Router)** y también en **MS1, MS2** (Oriente).
 
 **En Core1:**
 ```
@@ -271,7 +310,7 @@ router ospf 1
  network 10.10.0.0 0.0.0.3 area 0
  network 10.10.0.4 0.0.0.3 area 0
  network 10.10.0.28 0.0.0.3 area 0
- passive-interface GigabitEthernet0/3
+ passive-interface GigabitEthernet1/1/4
 exit
 ```
 
@@ -282,7 +321,7 @@ router ospf 1
  network 10.10.0.0 0.0.0.3 area 0
  network 10.10.0.8 0.0.0.3 area 0
  network 10.10.0.32 0.0.0.3 area 0
- passive-interface GigabitEthernet0/3
+ passive-interface GigabitEthernet1/1/4
 exit
 ```
 
@@ -319,7 +358,7 @@ exit
 
 ---
 
-### Paso 1.7 — Configurar EIGRP AS 100 (Occidente)
+### Paso 1.8 — Configurar EIGRP AS 100 (Occidente)
 
 **En Core1:**
 ```
@@ -340,7 +379,7 @@ exit
 
 ---
 
-### Paso 1.8 — Configurar RIPv2 (Norte)
+### Paso 1.9 — Configurar RIPv2 (Norte)
 
 **En Core2:**
 ```
@@ -363,7 +402,7 @@ exit
 
 ---
 
-### Paso 1.9 — Configurar Rutas Estáticas (Data Center)
+### Paso 1.10 — Configurar Rutas Estáticas (Data Center)
 
 **En R-Central1:**
 ```
@@ -389,7 +428,7 @@ ip route 192.168.40.0 255.255.255.0 10.10.0.34 10
 
 ---
 
-### Paso 1.10 — Configurar Redistribución de Rutas
+### Paso 1.11 — Configurar Redistribución de Rutas
 
 **En Core1 (redistribuye OSPF ↔ EIGRP):**
 ```
