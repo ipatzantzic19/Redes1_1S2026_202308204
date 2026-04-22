@@ -162,6 +162,58 @@ El diseño cubre cuatro sedes regionales: **Occidente** (Agencia Regional Comerc
 
 ---
 
+## 4.6 Tabla de Dispositivos Finales por Área
+
+### Sede Occidente — Agencia Regional Comercial
+
+| VLAN | Área Funcional | Cantidad Hosts | Rango de IPs | Gateway | Descripción |
+|------|----------------|----------------|--------------|---------|-------------|
+| 14 | Cajas | 7 | 192.168.10.1 — 192.168.10.7 | 192.168.10.1 | Transacciones críticas |
+| 24 | Asesores | 7 | 192.168.10.65 — 192.168.10.71 | 192.168.10.65 | Servicio al cliente |
+| 34 | Gerencia | 5 | 192.168.10.113 — 192.168.10.117 | 192.168.10.113 | Administración local |
+| 44 | Seguridad | 7 | 192.168.10.97 — 192.168.10.103 | 192.168.10.97 | Cámaras y Biométricos |
+| **Total Occidente** | — | **26 hosts** | — | — | — |
+
+### Sede Norte — Centro de Autorización de Créditos
+
+| VLAN | Área Funcional | Cantidad Hosts | Rango de IPs | Gateway | Descripción |
+|------|----------------|----------------|--------------|---------|-------------|
+| 54 | Análisis | 7 | 192.168.20.1 — 192.168.20.7 | 192.168.20.1 | Analistas de Riesgo |
+| 64 | Auditoría | 7 | 192.168.20.65 — 192.168.20.71 | 192.168.20.65 | Revisión de cuentas |
+| 74 | Legal | 5 | 192.168.20.97 — 192.168.20.101 | 192.168.20.97 | Contratos |
+| **Total Norte** | — | **19 hosts** | — | — | — |
+
+### Sede Oriente — Centro Financiero Legado
+
+| VLAN | Área Funcional | Cantidad Hosts | Rango de IPs | Gateway HSRP | Descripción |
+|------|----------------|----------------|--------------|--------------|-------------|
+| 94 | Plataforma | 7 | 192.168.30.1 — 192.168.30.7 | 192.168.30.1 | Atención VIP (con redundancia) |
+| 84 | Bóveda | 7 | 192.168.30.65 — 192.168.30.71 | 192.168.30.65 | Operaciones de valores (con redundancia) |
+| **Total Oriente** | — | **14 hosts** | — | — | — |
+
+### Data Center y Sede Central — Alta Seguridad
+
+| VLAN | Área Funcional | Cantidad Hosts | Rango de IPs | Gateway | Descripción |
+|------|----------------|----------------|--------------|---------|-------------|
+| 24 | Web_Apps | 7 | 192.168.40.1 — 192.168.40.7 | 192.168.40.1 | Servidores de Banca Virtual |
+| 14 | Core_BD | 7 | 192.168.40.33 — 192.168.40.39 | 192.168.40.33 | Servidores de Base de Datos |
+| 34 | NOC | 5 | 192.168.40.49 — 192.168.40.53 | 192.168.40.49 | Monitoreo central |
+| **Total Data Center** | — | **19 hosts** | — | — | — |
+
+### Resumen Global de Dispositivos Finales
+
+| Sede | Cantidad Hosts | VLAN Asignadas | Gateway Type |
+|------|---|---|---|
+| Occidente | 26 | 14, 24, 34, 44 | Estático Router-on-a-Stick |
+| Norte | 19 | 54, 64, 74 | Estático Router-on-a-Stick |
+| Oriente | 14 | 94, 84 | HSRP (Redundancia) |
+| Data Center | 19 | 24, 14, 34 | Estático |
+| **TOTAL BANTECH GT** | **78 hosts** | **14 VLANs** | **Múltiple** |
+
+> **Nota:** Mínimo 5-7 hosts representativos por VLAN/área. En Oriente (Sede Oriente), los hosts utilizan el gateway **virtual HSRP** (192.168.30.1 para VLAN 94 y 192.168.30.65 para VLAN 84) que apunta a MS1 (Activo) o MS2 (Standby). En caso de fallo de MS1, el tráfico es redirigido automáticamente a MS2.
+
+---
+
 ## 5. Arquitectura del Backbone Core
 
 ### 5.1 Descripción General
@@ -241,6 +293,28 @@ El Backbone Nacional de BanTech GT representa el núcleo transaccional que inter
 Se implementó una **topología en estrella jerárquica** con un switch de distribución central (SW-DIST-OCC) y switches de acceso dedicados por área funcional. Esta decisión responde directamente al contexto operativo de la sede: la agencia con mayor volumen de transacciones físicas de la región requiere que un incidente en un área (como un broadcast storm en el área de asesores) no pueda propagarse hacia las cajas transaccionales.
 
 La segmentación mediante VLANs garantiza el aislamiento del tráfico por área. El switch de distribución actúa como concentrador central donde convergen todos los trunks 802.1Q, y el router R-Occidente implementa la técnica **Router-on-a-Stick** mediante subinterfaces, permitiendo el enrutamiento inter-VLAN sin necesidad de un switch multicapa.
+
+#### 6.1.1 Distribución de Switches por Criticidad y Volumen
+
+La decisión de asignar **switches dedicados a Cajas y Asesores**, pero **compartir un switch para Gerencia y Seguridad** obedece a dos factores clave:
+
+| Criterio | VLAN 14 (Cajas) | VLAN 24 (Asesores) | VLAN 34 + 44 (Gerencia/Seg) |
+|----------|---|---|---|
+| **Hosts requeridos** | 45 | 30 | 10 + 12 = 22 |
+| **Criticidad** | ⭐⭐⭐ Crítica | ⭐⭐⭐ Crítica | ⭐⭐ Soporte |
+| **Tráfico** | Alto (transacciones financieras) | Alto (transacciones) | Bajo (administrativo) |
+| **Switch dedicado** | ✅ Sí | ✅ Sí | ❌ No |
+| **Razón** | Aislamiento de fallos críticos | Aislamiento de fallos críticos | Optimización de recursos |
+
+**Justificación técnica:**
+
+1. **Protección de transacciones:** Si SW-CAJAS sufre un broadcast storm, únicamente el área de cajas es afectada. Las transacciones de asesores (VLAN 24) continúan fluyendo sin interrupciones hacia R-Occidente.
+
+2. **Escalabilidad operativa:** Con 45 y 30 hosts respectivamente, Cajas y Asesores justifican switches dedicados desde el punto de vista de carga de tráfico y ancho de banda.
+
+3. **Costo vs. Beneficio:** Gerencia (10 hosts) y Seguridad (12 hosts) son áreas de soporte. Un broadcast storm en Gerencia no paraliza transacciones bancarias. Comprar un switch adicional por 10 hosts sería un desperdicio de recursos.
+
+4. **Flexibilidad futura:** Esta arquitectura permite que, si Gerencia o Seguridad crece significativamente en el futuro, puedan migrarse a un switch dedicado sin afectar la estructura actual.
 
 **Ventajas de tolerancia a fallos:** Si un switch de acceso falla, únicamente el segmento de esa área queda afectado. Las demás VLANs continúan operando con normalidad a través del switch de distribución.
 

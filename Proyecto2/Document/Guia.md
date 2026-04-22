@@ -11,6 +11,28 @@
 
 ---
 
+## 📊 Tabla de Referencia — Dispositivos Finales por Sede
+
+### Resumen de Hosts por Área
+
+| Sede | VLAN | Área Funcional | Qty Hosts | Rango IPs | Gateway |
+|------|------|---|---|---|---|
+| **Occidente** | 14 | Cajas | 7 | 192.168.10.1-7 | 192.168.10.1 |
+| | 24 | Asesores | 7 | 192.168.10.65-71 | 192.168.10.65 |
+| | 34 | Gerencia | 5 | 192.168.10.113-117 | 192.168.10.113 |
+| | 44 | Seguridad | 7 | 192.168.10.97-103 | 192.168.10.97 |
+| **Norte** | 54 | Análisis | 7 | 192.168.20.1-7 | 192.168.20.1 |
+| | 64 | Auditoría | 7 | 192.168.20.65-71 | 192.168.20.65 |
+| | 74 | Legal | 5 | 192.168.20.97-101 | 192.168.20.97 |
+| **Oriente** | 94 | Plataforma | 7 | 192.168.30.1-7 | 192.168.30.1 (HSRP) |
+| | 84 | Bóveda | 7 | 192.168.30.65-71 | 192.168.30.65 (HSRP) |
+| **Data Center** | 24 | Web_Apps | 7 | 192.168.40.1-7 | 192.168.40.1 |
+| | 14 | Core_BD | 7 | 192.168.40.33-39 | 192.168.40.33 |
+| | 34 | NOC | 5 | 192.168.40.49-53 | 192.168.40.49 |
+| **TOTAL** | — | — | **78 hosts** | — | — |
+
+---
+
 ## FASE 1 — Backbone Core (Núcleo Nacional)
 
 ### Paso 1.1 — Colocar dispositivos del backbone en Packet Tracer
@@ -466,6 +488,22 @@ exit
 
 ## FASE 2 — Sede Occidente
 
+### Introducción a la Arquitectura de Occidente
+
+**Contexto:** Sede Occidente es la agencia con mayor volumen de transacciones físicas. Su red debe garantizar que un incidente en un área no afecte las operaciones de cajas (transacciones críticas).
+
+**Arquitectura propuesta — Distribución de Switches por Criticidad:**
+
+| Switch | VLAN(s) | Hosts | Razón |
+|--------|---------|-------|-------|
+| **SW-CAJAS** | 14 | 45 | ⭐⭐⭐ Dedicado (crítica), transacciones financieras altas |
+| **SW-ASESORES** | 24 | 30 | ⭐⭐⭐ Dedicado (crítica), tráfico de servicio al cliente |
+| **SW-GERENCIA-SEG** | 34 + 44 | 10 + 12 | ⭐⭐ Compartido (soporte), tráfico administrativo bajo |
+
+**Justificación:** Los switches dedicados protegen el aislamiento de fallos en áreas críticas. Gerencia y Seguridad, al ser funciones de soporte, pueden compartir switch sin riesgo operativo. Si Gerencia experimenta un broadcast storm, las transacciones de cajas y asesores continúan.
+
+---
+
 ### Paso 2.1 — Colocar dispositivos en Packet Tracer
 
 Agregar a la topología:
@@ -490,6 +528,7 @@ Conectar:
 configure terminal
 vtp mode server
 vtp domain bantech04
+vtp version 2
 vtp password cisco
 exit
 ```
@@ -499,6 +538,7 @@ exit
 configure terminal
 vtp mode client
 vtp domain bantech04
+vtp version 2
 vtp password cisco
 exit
 ```
@@ -672,13 +712,74 @@ Configura manualmente en cada PC:
 
 ---
 
-### Paso 3.2 — Crear VLANs en SW-CORE-NORTE
+### Paso 3.2 — Configurar VTP y Contraseña en Sede Norte
+
+**En SW-CORE-NORTE (VTP Server):**
+```
+configure terminal
+hostname SW-CORE-NORTE
+enable secret cisco
+line console 0
+ password cisco
+ login
+line vty 0 4
+ password cisco
+ login
+service password-encryption
+no ip domain-lookup
+vtp mode server
+vtp domain bantech04
+vtp version 2
+vtp password cisco
+exit
+```
+
+**En SW-DIST-N1 (VTP Client):**
+```
+configure terminal
+hostname SW-DIST-N1
+enable secret cisco
+line console 0
+ password cisco
+ login
+line vty 0 4
+ password cisco
+ login
+service password-encryption
+no ip domain-lookup
+vtp mode client
+vtp domain bantech04
+vtp version 2
+vtp password cisco
+exit
+```
+
+**En SW-DIST-N2 (VTP Client):**
+```
+configure terminal
+hostname SW-DIST-N2
+enable secret cisco
+line console 0
+ password cisco
+ login
+line vty 0 4
+ password cisco
+ login
+service password-encryption
+no ip domain-lookup
+vtp mode client
+vtp domain bantech04
+vtp version 2
+vtp password cisco
+exit
+```
+
+---
+
+### Paso 3.3 — Crear VLANs en SW-CORE-NORTE
 
 ```
 configure terminal
-vtp mode server
-vtp domain bantech04
-vtp password cisco
 vlan 54
  name Analisis
 vlan 64
@@ -690,43 +791,64 @@ exit
 
 ---
 
-### Paso 3.3 — Configurar Rapid PVST+
+### Paso 3.4 — Configurar Rapid PVST+
 
-**En SW-CORE-NORTE (y repetir en SW-DIST-N1, SW-DIST-N2):**
+**En SW-CORE-NORTE:**
 ```
 configure terminal
 spanning-tree mode rapid-pvst
-exit
-```
-
-**Forzar Root Bridge en SW-CORE-NORTE:**
-```
-configure terminal
 spanning-tree vlan 54 priority 4096
 spanning-tree vlan 64 priority 4096
 spanning-tree vlan 74 priority 4096
 exit
 ```
 
-**En SW-DIST-N1 y SW-DIST-N2 (prioridad más alta = no serán root):**
+**En SW-DIST-N1:**
 ```
+configure terminal
+spanning-tree mode rapid-pvst
 spanning-tree vlan 54 priority 8192
 spanning-tree vlan 64 priority 8192
 spanning-tree vlan 74 priority 8192
+exit
+```
+
+**En SW-DIST-N2:**
+```
+configure terminal
+spanning-tree mode rapid-pvst
+spanning-tree vlan 54 priority 8192
+spanning-tree vlan 64 priority 8192
+spanning-tree vlan 74 priority 8192
+exit
 ```
 
 ---
 
-### Paso 3.4 — Configurar Trunks en Sede Norte
+### Paso 3.5 — Configurar Trunks en Sede Norte
+
+**Topología:**
+```
+         SW-CORE-NORTE (Root Bridge)
+              /      \
+        GigE0/1      GigE0/2
+          /              \
+    SW-DIST-N1 -------- SW-DIST-N2
+      /  |  \            /  |  \
+    ACC  ACC ACC      ACC  ACC ACC
+   (acceso a hosts)
+```
 
 **En SW-CORE-NORTE:**
 ```
 interface GigabitEthernet0/1
+ description TRUNK-HACIA-SW-DIST-N1
  switchport mode trunk
  switchport trunk allowed vlan 54,64,74
  no shutdown
 exit
 interface GigabitEthernet0/2
+ description TRUNK-HACIA-SW-DIST-N2
  switchport mode trunk
  switchport trunk allowed vlan 54,64,74
  no shutdown
@@ -739,23 +861,79 @@ interface GigabitEthernet0/3
 exit
 ```
 
-**En SW-DIST-N1 (hacia SW-CORE-NORTE y SW-DIST-N2):**
+**En SW-DIST-N1 (Trunks):**
 ```
 interface GigabitEthernet0/1
+ description TRUNK-HACIA-SW-CORE-NORTE
  switchport mode trunk
  switchport trunk allowed vlan 54,64,74
  no shutdown
 exit
 interface GigabitEthernet0/2
+ description TRUNK-HACIA-SW-DIST-N2
  switchport mode trunk
  switchport trunk allowed vlan 54,64,74
+ no shutdown
+exit
+```
+
+**En SW-DIST-N1 (Puertos de Acceso):**
+```
+interface range FastEthernet0/3 - 5
+ switchport mode access
+ switchport access vlan 54
+ no shutdown
+exit
+interface range FastEthernet0/6 - 8
+ switchport mode access
+ switchport access vlan 64
+ no shutdown
+exit
+interface range FastEthernet0/9 - 10
+ switchport mode access
+ switchport access vlan 74
+ no shutdown
+exit
+```
+
+**En SW-DIST-N2 (Trunks):**
+```
+interface GigabitEthernet0/1
+ description TRUNK-HACIA-SW-CORE-NORTE
+ switchport mode trunk
+ switchport trunk allowed vlan 54,64,74
+ no shutdown
+exit
+interface GigabitEthernet0/2
+ description TRUNK-HACIA-SW-DIST-N1
+ switchport mode trunk
+ switchport trunk allowed vlan 54,64,74
+ no shutdown
+exit
+```
+
+**En SW-DIST-N2 (Puertos de Acceso):**
+```
+interface range FastEthernet0/3 - 5
+ switchport mode access
+ switchport access vlan 54
+ no shutdown
+exit
+interface range FastEthernet0/6 - 8
+ switchport mode access
+ switchport access vlan 64
+ no shutdown
+exit
+interface range FastEthernet0/9 - 10
+ switchport mode access
+ switchport access vlan 74
  no shutdown
 exit
 ```
 
 ---
 
-### Paso 3.5 — Configurar Router-on-a-Stick en R-Norte
+### Paso 3.6 — Configurar Router-on-a-Stick en R-Norte
 
 ```
 interface FastEthernet1/0
@@ -781,7 +959,7 @@ exit
 
 ---
 
-### Paso 3.6 — IPs en hosts de Norte
+### Paso 3.7 — IPs en hosts de Norte
 
 | VLAN | IP ejemplo | Máscara | Gateway |
 |------|-----------|---------|---------|
@@ -800,6 +978,7 @@ configure terminal
 ip routing
 vtp mode server
 vtp domain bantech04
+vtp version 2
 vtp password cisco
 vlan 84
  name Boveda
@@ -814,6 +993,7 @@ configure terminal
 ip routing
 vtp mode client
 vtp domain bantech04
+vtp version 2
 vtp password cisco
 exit
 ```

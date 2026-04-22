@@ -127,6 +127,29 @@ Orden de subnetting: de mayor a menor número de hosts.
 
 ---
 
+## 3.5 Tabla de Dispositivos Finales (Hosts / PCs)
+
+### Cantidad de Hosts por Sede y Área
+
+| Sede | VLAN | Área Funcional | Qty Hosts | Rango IPs | Gateway |
+|------|------|---|---|---|---|
+| **Occidente** | 14 | Cajas | 7 | 192.168.10.1-7 | 192.168.10.1 |
+| | 24 | Asesores | 7 | 192.168.10.65-71 | 192.168.10.65 |
+| | 34 | Gerencia | 5 | 192.168.10.113-117 | 192.168.10.113 |
+| | 44 | Seguridad | 7 | 192.168.10.97-103 | 192.168.10.97 |
+| **Norte** | 54 | Análisis | 7 | 192.168.20.1-7 | 192.168.20.1 |
+| | 64 | Auditoría | 7 | 192.168.20.65-71 | 192.168.20.65 |
+| | 74 | Legal | 5 | 192.168.20.97-101 | 192.168.20.97 |
+| **Oriente** | 94 | Plataforma | 7 | 192.168.30.1-7 | 192.168.30.1 (HSRP) |
+| | 84 | Bóveda | 7 | 192.168.30.65-71 | 192.168.30.65 (HSRP) |
+| **Data Center** | 24 | Web_Apps | 7 | 192.168.40.1-7 | 192.168.40.1 |
+| | 14 | Core_BD | 7 | 192.168.40.33-39 | 192.168.40.33 |
+| | 34 | NOC | 5 | 192.168.40.49-53 | 192.168.40.49 |
+
+**Total BanTech GT:** 78 dispositivos finales distribuidos en 4 sedes, con redundancia HSRP en Oriente.
+
+---
+
 ## 4. Arquitectura General del Backbone
 
 ### 4.1 Topología del Backbone Core
@@ -192,6 +215,20 @@ Orden de subnetting: de mayor a menor número de hosts.
 **Justificación de topología:**
 Se elige topología en estrella con un switch de distribución central (SW-DIST-OCC) y switches de acceso por área. Esto facilita la administración centralizada requerida y permite que un problema en el área de asesores no afecte las cajas, ya que cada VLAN está completamente segmentada. El router R-Occidente realiza el inter-VLAN mediante subinterfaces (Router-on-a-Stick), cumpliendo el requerimiento técnico.
 
+**Distribución de Switches por Criticidad:**
+
+| Dispositivo | VLAN(s) | Hosts | Razón del Diseño |
+|---|---|---|---|
+| **SW-CAJAS** | 14 | 45 | ⭐⭐⭐ Crítica: dedicado a transacciones financieras de cajas |
+| **SW-ASESORES** | 24 | 30 | ⭐⭐⭐ Crítica: dedicado a transacciones de servicio al cliente |
+| **SW-GERENCIA-SEG** | 34 + 44 | 10 + 12 | ⭐⭐ Soporte: compartido (bajo volumen, tráfico administrativo) |
+
+**Razón técnica de compartir Gerencia y Seguridad:**
+- Ambas áreas generan bajo tráfico administrativo (no transaccional)
+- Un broadcast storm en Gerencia no afecta cajas ni asesores
+- Costo-efectividad: no justifica un switch por solo 10 hosts de Gerencia
+- Escalabilidad: si crece, puede separarse fácilmente en el futuro
+
 **Dispositivos propuestos:**
 - R-Occidente (router de borde, Router-on-a-Stick)
 - SW-DIST-OCC (switch de distribución, VTP Server)
@@ -202,7 +239,7 @@ Se elige topología en estrella con un switch de distribución central (SW-DIST-
 **Puertos Trunk:** R-Occidente ↔ SW-DIST-OCC, SW-DIST-OCC ↔ todos los switches de acceso
 **Puertos Acceso:** Hosts finales en cada switch de acceso
 
-**Tolerancia a fallos:** El switch de distribución es el punto central; si cae un switch de acceso, solo ese segmento se ve afectado.
+**Tolerancia a fallos:** El switch de distribución es el punto central; si cae un switch de acceso, solo ese segmento se ve afectado. Las transacciones críticas (Cajas, Asesores) están aisladas entre sí.
 
 ---
 
