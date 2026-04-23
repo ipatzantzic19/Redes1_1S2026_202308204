@@ -426,27 +426,25 @@ exit
 
 ### Paso 1.10 — Configurar Rutas Estáticas (Data Center)
 
-**En R-Central1:**
+**⭐ SOLO en R-Central1 (que redistribuye hacia OSPF):**
 ```
-ip route 192.168.40.0 255.255.255.0 10.10.0.29
-ip route 0.0.0.0 0.0.0.0 10.10.0.29
-```
-
-**En R-Central2:**
-```
-ip route 192.168.40.0 255.255.255.0 10.10.0.33
-ip route 0.0.0.0 0.0.0.0 10.10.0.33
+ip route 192.168.40.0 255.255.255.0 192.168.40.254
+ip route 0.0.0.0 0.0.0.0 192.168.40.254
 ```
 
-**En Core1 (rutas hacia Data Center):**
+> 📝 **Nota:** R-Central1 será configurado en el paso 5.6. Estas rutas apuntan hacia el Data Center (next-hop dentro de la red 192.168.40.0).
+
+**En Core1 (ruta de respaldo/verificación):**
 ```
 ip route 192.168.40.0 255.255.255.0 10.10.0.30
 ```
 
-**En Core2 (rutas hacia Data Center - ruta de respaldo):**
+**En Core2 (ruta de respaldo):**
 ```
 ip route 192.168.40.0 255.255.255.0 10.10.0.34 10
 ```
+
+> 📝 **Justificación:** R-Central2 NO requiere rutas estáticas porque es un Router-on-a-Stick que solo sirve de gateway entre VLANs del Data Center. El tráfico saliente hacia el backbone pasará por R-Central1 que redistribuye.
 
 ---
 
@@ -1111,16 +1109,21 @@ exit
 
 ### Paso 5.1 — Colocar dispositivos
 
-- `SW-DIST-DC` (switch de distribución)
-- `SW-ACC-BD` (acceso a servidores de BD — EtherChannel con SW-DIST-DC)
-- `SW-ACC-WEB` (acceso servidores Web)
-- `SW-ACC-NOC` (acceso NOC)
+- `SW-DIST-DC` (switch de distribución, punto central de EtherChannel)
+- `SW-ACC-BD` (acceso a servidores Core_BD — Port-channel1 EtherChannel + enlaces simples)
+- `SW-ACC-WEB` (acceso a servidores Web_Apps — Port-channel3 EtherChannel + enlaces simples)
+- `SW-ACC-NOC` (acceso NOC — enlace simple, SIN EtherChannel)
 - Servidores o PCs representando servidores (mínimo 7 por área)
+
+> ⭐ **IMPORTANTE:** EtherChannel (LACP) SOLO entre switches de distribución (Po1: BD, Po3: WEB). Enlaces simples a servidores.
 
 ---
 
-### Paso 5.2 — Crear VLANs en SW-DIST-DC
+### Paso 5.2 — Crear VLANs MANUALMENTE en cada switch (SIN VTP por seguridad)
 
+**⚠️ IMPORTANTE:** Data Center NO utiliza VTP por políticas de seguridad estricta. Cada VLAN se crea manualmente en CADA switch.
+
+**En SW-DIST-DC:**
 ```
 configure terminal
 vlan 14
@@ -1132,12 +1135,51 @@ vlan 34
 exit
 ```
 
+**En SW-ACC-BD (crear las MISMAS VLANs):**
+```
+configure terminal
+vlan 14
+ name Core_BD
+vlan 24
+ name Web_Apps
+vlan 34
+ name NOC
+exit
+```
+
+**En SW-ACC-WEB (crear las MISMAS VLANs):**
+```
+configure terminal
+vlan 14
+ name Core_BD
+vlan 24
+ name Web_Apps
+vlan 34
+ name NOC
+exit
+```
+
+**En SW-ACC-NOC (crear las MISMAS VLANs):**
+```
+configure terminal
+vlan 14
+ name Core_BD
+vlan 24
+ name Web_Apps
+vlan 34
+ name NOC
+exit
+```
+
+> 📝 **Justificación:** Sin VTP, cada VLAN debe configurarse explícitamente. Esto mejora control, trazabilidad y seguridad en Data Center.
+
 ---
 
-### Paso 5.3 — Configurar EtherChannel LACP entre SW-DIST-DC y SW-ACC-BD
+### Paso 5.3 — Configurar Port-channel1 entre SW-DIST-DC y SW-ACC-BD (Enlace Distribución)
 
 **En SW-DIST-DC:**
 ```
+configure terminal
 interface range GigabitEthernet0/1 - 2
  channel-group 1 mode active
  no shutdown
@@ -1151,6 +1193,7 @@ exit
 
 **En SW-ACC-BD:**
 ```
+configure terminal
 interface range GigabitEthernet0/1 - 2
  channel-group 1 mode active
  no shutdown
@@ -1160,19 +1203,173 @@ interface Port-channel1
  switchport trunk allowed vlan 14,24,34
  no shutdown
 exit
-```
-
-**Verificar EtherChannel:**
-```
-show etherchannel summary
 ```
 
 ---
 
-### Paso 5.4 — Configurar puertos de acceso en Data Center
+### Paso 5.3b — Configurar enlace simple entre SW-ACC-BD y Servidores Core_BD (Acceso)
 
-**En SW-ACC-BD:**
+**En SW-ACC-BD (enlace simple a servidores BD, VLAN 14):**
 ```
+configure terminal
+interface GigabitEthernet0/3
+ switchport mode access
+ switchport access vlan 14
+ description Enlace-Servidores-Core-BD
+ no shutdown
+exit
+```
+
+> 📝 **CAMBIO:** Los servidores Core_BD conectan con **un cable simple Ethernet** a GigE0/3. No hay agregación (suficiente para la aplicación).
+
+---
+
+### Paso 5.4 — Configurar Port-channel3 entre SW-DIST-DC y SW-ACC-WEB (Enlace Distribución)
+
+**En SW-DIST-DC:**
+```
+configure terminal
+interface range GigabitEthernet0/3 - 4
+ channel-group 3 mode active
+ no shutdown
+exit
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+exit
+```
+
+**En SW-ACC-WEB:**
+```
+configure terminal
+interface range GigabitEthernet0/1 - 2
+ channel-group 3 mode active
+ no shutdown
+exit
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+exit
+```
+
+---
+
+### Paso 5.4b — Configurar enlace simple entre SW-ACC-WEB y Servidores Web_Apps (Acceso)
+
+**En SW-ACC-WEB (enlace simple a servidores Web, VLAN 24):**
+```
+configure terminal
+interface GigabitEthernet0/3
+ switchport mode access
+ switchport access vlan 24
+ description Enlace-Servidores-Web-Apps
+ no shutdown
+exit
+```
+
+> 📝 **CAMBIO:** Los servidores Web_Apps conectan con **un cable simple Ethernet** a GigE0/3. No hay agregación (suficiente para la aplicación).
+
+---
+
+### Paso 5.5 — Configurar enlace SIMPLE entre SW-DIST-DC y SW-ACC-NOC (SIN EtherChannel)
+
+**En SW-DIST-DC:**
+```
+configure terminal
+interface GigabitEthernet0/5
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+exit
+```
+
+**En SW-ACC-NOC:**
+```
+configure terminal
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+exit
+```
+
+> 📝 **Justificación:** NOC es monitoreo (bajo tráfico). No requiere agregación de ancho de banda.
+
+---
+
+### Paso 5.6 — Configurar R-Central1 (Redistribución Estáticas → OSPF)
+
+**⚠️ CRÍTICO (Inciso 5.4 del PDF):** R-Central1 redistribuye las rutas estáticas del Data Center hacia OSPF del backbone.
+
+**En R-Central1:**
+```
+configure terminal
+hostname R-Central1
+!
+interface GigabitEthernet0/0
+ description ENLACE-BACKBONE-Core1
+ ip address 10.10.0.30 255.255.255.252
+ no shutdown
+exit
+!
+! === Rutas estáticas hacia Data Center ===
+ip route 192.168.40.0 255.255.255.0 192.168.40.0
+!
+! === OSPF (redistribución de estáticas) ===
+router ospf 1
+ router-id 5.5.5.5
+ network 10.10.0.28 0.0.0.3 area 0
+ redistribute static subnets
+exit
+```
+
+> 📝 **Resultado:** R-Central1 anuncia la red 192.168.40.0/24 del Data Center a todo el backbone OSPF.
+
+---
+
+### Paso 5.6b — Configurar Router-on-a-Stick en R-Central2 (Gateway de VLANs)
+
+**En R-Central2 (conectado a SW-DIST-DC con enlace trunk):**
+```
+configure terminal
+hostname R-Central2
+!
+interface fa1/0
+ description ENLACE-SW-DIST-DC-TRUNK
+ no ip address
+ no shutdown
+exit
+
+interface fa1/0.14
+ encapsulation dot1Q 14
+ ip address 192.168.40.33 255.255.255.240
+ description Gateway-VLAN14-Core_BD
+exit
+
+interface fa1/0.24
+ encapsulation dot1Q 24
+ ip address 192.168.40.1 255.255.255.224
+ description Gateway-VLAN24-Web_Apps
+exit
+
+interface fa1/0.34
+ encapsulation dot1Q 34
+ ip address 192.168.40.49 255.255.255.240
+ description Gateway-VLAN34-NOC
+exit
+```
+
+> 📝 **Nota:** R-Central2 GigE1/0 conecta al **SW-DIST-DC** con un enlace trunk 802.1Q. Las subinterfaces proporcionan los gateways para cada VLAN del Data Center.
+
+---
+
+### Paso 5.7 — Configurar puertos de acceso a hosts en Data Center
+
+**En SW-ACC-BD (acceso a hosts VLAN 14):**
+```
+configure terminal
 interface range FastEthernet0/1 - 7
  switchport mode access
  switchport access vlan 14
@@ -1180,8 +1377,9 @@ interface range FastEthernet0/1 - 7
 exit
 ```
 
-**En SW-ACC-WEB:**
+**En SW-ACC-WEB (acceso a hosts VLAN 24):**
 ```
+configure terminal
 interface range FastEthernet0/1 - 7
  switchport mode access
  switchport access vlan 24
@@ -1189,8 +1387,9 @@ interface range FastEthernet0/1 - 7
 exit
 ```
 
-**En SW-ACC-NOC:**
+**En SW-ACC-NOC (acceso a hosts VLAN 34):**
 ```
+configure terminal
 interface range FastEthernet0/1 - 7
  switchport mode access
  switchport access vlan 34
@@ -1200,39 +1399,39 @@ exit
 
 ---
 
-### Paso 5.5 — Configurar Router-on-a-Stick en R-Central2
+### Paso 5.8 — Asignar IPs a hosts del Data Center
 
-```
-interface FastEthernet1/0
- no ip address
- no shutdown
-exit
-
-interface FastEthernet1/0.14
- encapsulation dot1Q 14
- ip address 192.168.40.33 255.255.255.240
-exit
-
-interface FastEthernet1/0.24
- encapsulation dot1Q 24
- ip address 192.168.40.1 255.255.255.224
-exit
-
-interface FastEthernet1/0.34
- encapsulation dot1Q 34
- ip address 192.168.40.49 255.255.255.240
-exit
-```
+| VLAN | Area | IP ejemplo | Máscara | Gateway |
+|------|------|-----------|---------|---------|
+| Core_BD (14) | BD | 192.168.40.35 | 255.255.255.240 | 192.168.40.33 |
+| Core_BD (14) | BD | 192.168.40.36 | 255.255.255.240 | 192.168.40.33 |
+| Web_Apps (24) | Web | 192.168.40.5 | 255.255.255.224 | 192.168.40.1 |
+| Web_Apps (24) | Web | 192.168.40.10 | 255.255.255.224 | 192.168.40.1 |
+| NOC (34) | NOC | 192.168.40.52 | 255.255.255.240 | 192.168.40.49 |
 
 ---
 
-### Paso 5.6 — IPs en hosts del Data Center
+### Paso 5.9 — Verificar EtherChannel en Data Center
 
-| VLAN | IP ejemplo | Máscara | Gateway |
-|------|-----------|---------|---------|
-| Core_BD (14) | 192.168.40.35 | 255.255.255.240 | 192.168.40.33 |
-| Web_Apps (24) | 192.168.40.5 | 255.255.255.224 | 192.168.40.1 |
-| NOC (34) | 192.168.40.52 | 255.255.255.240 | 192.168.40.49 |
+**En SW-DIST-DC:**
+```
+show etherchannel summary
+```
+Esperado: `Port-channel1 (Po1) SU` y `Port-channel3 (Po3) SU`
+
+**En SW-ACC-BD:**
+```
+show interface GigabitEthernet0/3
+```
+Esperado: Estado `up up`, acceso VLAN 14 (enlace simple a servidores, sin EtherChannel)
+
+**En SW-ACC-WEB:**
+```
+show interface GigabitEthernet0/3
+```
+Esperado: Estado `up up`, acceso VLAN 24 (enlace simple a servidores, sin EtherChannel)
+
+> 📝 **Nota:** Po1 y Po3 son la agregación entre switches de distribución. Po2 y Po4 ya NO existen (reemplazados por enlaces simples a servidores).
 
 ---
 
@@ -1326,10 +1525,25 @@ ping 192.168.20.10
 
 ### Paso 6.8 — Verificar EtherChannel en Data Center
 
+**En SW-DIST-DC:**
 ```
 show etherchannel summary
 ```
-Debe mostrar el Port-channel en estado `SU` (State Up).
+Debe mostrar: `Port-channel1 (Po1) SU` y `Port-channel3 (Po3) SU`
+
+**En SW-ACC-BD:**
+```
+show etherchannel summary
+```
+Debe mostrar: `Port-channel1 (Po1) SU` y `Port-channel2 (Po2) SU`
+
+**En SW-ACC-WEB:**
+```
+show etherchannel summary
+```
+Debe mostrar: `Port-channel3 (Po3) SU` y `Port-channel4 (Po4) SU`
+
+> 📝 **Nota:** SW-ACC-NOC no mostrará Port-channels (solo enlace simple).
 
 ### Paso 6.9 — Verificar VTP
 
@@ -1352,12 +1566,18 @@ Tomar capturas de pantalla de:
 2. `show ip ospf neighbor` en todos los routers del backbone
 3. `show standby brief` en MS1 y MS2 antes y después del failover
 4. `show spanning-tree vlan 54` en SW-CORE-NORTE
-5. `show etherchannel summary` en SW-DIST-DC
-6. `show vtp status` y `show vlan brief` en un cliente VTP
-7. Ping exitoso Occidente → Data Center
-8. Ping exitoso Norte → Oriente
-9. Ping exitoso durante failover HSRP
-10. Topología completa visible en Packet Tracer
+5. `show etherchannel summary` en SW-DIST-DC (Po1 y Po3)
+6. `show etherchannel summary` en SW-ACC-BD (Po1 y Po2) ⭐
+7. `show etherchannel summary` en SW-ACC-WEB (Po3 y Po4) ⭐
+8. `show etherchannel detail Po2` en SW-ACC-BD (servidores BD)
+9. `show etherchannel detail Po4` en SW-ACC-WEB (servidores Web)
+10. `show vtp status` y `show vlan brief` en un cliente VTP (Occidente/Norte, NO Data Center)
+11. Ping exitoso Occidente → Data Center
+12. Ping exitoso Norte → Oriente
+13. Ping exitoso durante failover HSRP
+14. Topología completa visible en Packet Tracer
+
+> ⭐ **Crítico:** Las capturas de Po2 y Po4 demuestran que los EtherChannels hacia servidores están activos (inciso 5.4).
 
 ### Paso 7.2 — Organizar el repositorio GitHub
 

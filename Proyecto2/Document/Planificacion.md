@@ -190,11 +190,11 @@ Orden de subnetting: de mayor a menor número de hosts.
 
 ### 4.3 Redistribución de Rutas
 
-| Punto de Redistribución | Redistribuye |
-|------------------------|--------------|
-| Core1 (Switch) | OSPF ↔ EIGRP y EIGRP ↔ OSPF |
-| Core2 (Switch) | OSPF ↔ RIPv2 y RIPv2 ↔ OSPF |
-| R-Central1 | Estáticas → OSPF |
+| Punto de Redistribución | Redistribuye | Justificación |
+|------------------------|-------------|---------|
+| Core1 (Switch) | OSPF ↔ EIGRP y EIGRP ↔ OSPF | Nexo entre backbone OSPF y red regional EIGRP (Occidente) |
+| Core2 (Switch) | OSPF ↔ RIPv2 y RIPv2 ↔ OSPF | Nexo entre backbone OSPF y red legada RIPv2 (Norte) |
+| **R-Central1** | **Estáticas → OSPF (Inciso 5.4)** | **Propaga Data Center (192.168.40.0/24) a todo el backbone** |
 
 ### 4.4 Medios Físicos del Backbone
 
@@ -281,18 +281,40 @@ Topología en estrella dual: los switches de acceso se conectan simultáneamente
 
 ### 5.4 Data Center / Sede Central — EtherChannel + Rutas Estáticas
 
+**⭐ REQUISITO INCISO 5.4 DEL PDF:**
+> "Dado que este segmento usa enrutamiento estático, el estudiante debe asegurar que R-Central1 redistribuya o propague estas rutas hacia el OSPF del backbone."
+
 **Justificación de topología:**
-Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel (LACP) entre los switches de distribución del Data Center (SW-DIST-DC1, SW-DIST-DC2) y los switches de acceso de servidores para agregar ancho de banda. El segmento está aislado con rutas estáticas, y R-Central1 redistribuye estas rutas hacia OSPF del backbone.
+Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel (LACP) entre switches de distribución para agregar ancho de banda:
+- **Port-channel1:** Entre SW-DIST-DC y SW-ACC-BD (2 Gbps) ⭐
+- **Port-channel3:** Entre SW-DIST-DC y SW-ACC-WEB (2 Gbps) ⭐
+- **Enlace simple:** SW-ACC-BD ↔ Servidores Core_BD (suficiente)
+- **Enlace simple:** SW-ACC-WEB ↔ Servidores Web_Apps (suficiente)
+- **Enlace simple:** SW-ACC-NOC (monitoreo, tráfico bajo)
+
+El segmento está aislado con rutas estáticas, y **R-Central1 redistribuye estas rutas hacia OSPF del backbone** para permitir que todas las sedes (Occidente, Norte, Oriente) accedan al Data Center.
+
+**¿Por qué NO hay VTP en Data Center?**
+- Segmento de **rutas estáticas** por políticas estrictas de **seguridad de la información**
+- Minimiza cambios de configuración automáticos
+- **Mejor práctica:** Configurar cada VLAN manualmente (control explícito y trazabilidad)
+- Típico en infraestructuras críticas
 
 **Dispositivos propuestos:**
-- R-Central1 (redistribuye estáticas → OSPF)
-- R-Central2 (router de borde hacia Data Center)
-- SW-DIST-DC (distribución, punto EtherChannel)
-- SW-ACCESS-BD (acceso servidores BD, EtherChannel con SW-DIST-DC)
-- SW-ACCESS-WEB (acceso servidores Web)
-- SW-ACCESS-NOC (acceso NOC)
+- **R-Central1** ⭐ **(redistribuye estáticas → OSPF)** — Requerido inciso 5.4
+- **R-Central2** (Router-on-a-Stick, gateway de VLANs)
+- SW-DIST-DC (distribución)
+- SW-ACC-BD (acceso servidores BD) 
+- SW-ACC-WEB (acceso servidores Web)
+- SW-ACC-NOC (acceso NOC)
 
-**EtherChannel:** LACP entre SW-DIST-DC ↔ SW-ACCESS-BD (mínimo 2 interfaces físicas)
+**EtherChannel:** 
+- **Port-channel1:** LACP SW-DIST-DC ↔ SW-ACC-BD (trunk, 2 Gbps)
+- **Port-channel3:** LACP SW-DIST-DC ↔ SW-ACC-WEB (trunk, 2 Gbps)
+- **Enlaces simples:** GigE a servidores (BD, Web, NOC)
+
+**Flujo de rutas:**
+Data Center (192.168.40.0/24) → R-Central1 (redistribuye) → OSPF Backbone → Sedes Occidente, Norte, Oriente
 
 ---
 
@@ -302,17 +324,21 @@ Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel 
 |-----------|---------|-----------|
 | VLANs + 802.1Q | Todas | Segmentación del tráfico |
 | VTP (Server/Client) | Occidente, Norte | Propagación centralizada de VLANs |
+| **SIN VTP (Config. Manual)** | **Data Center** | **Seguridad estricta: rutas estáticas, sin propagación automática** |
 | Router-on-a-Stick | Occidente | Inter-VLAN en R-Occidente |
-| OSPF Area 0 | Backbone | Protocolo de enrutamiento del núcleo (Core1 SW, Core2 SW, Core3) |
-| EIGRP AS 100 | Occidente ↔ Backbone | Expansión regional (Core1 SW) |
-| RIPv2 | Norte ↔ Backbone | Red legada (Core2 SW) |
+| OSPF Area 0 | Backbone | Protocolo de enrutamiento del núcleo |
+| EIGRP AS 100 | Occidente ↔ Backbone | Expansión regional |
+| RIPv2 | Norte ↔ Backbone | Red legada |
 | Rutas Estáticas | Data Center ↔ Backbone | Alta seguridad |
-| Redistribución | Core1 (SW), Core2 (SW), R-Central1 | Interoperabilidad entre dominios |
+| Redistribución | Core1, Core2, R-Central1 | Interoperabilidad entre dominios |
 | Rapid PVST+ | Norte | Evitar tormentas de broadcast en anillo |
 | HSRP | Oriente (MS1, MS2) | Redundancia de gateway |
-| EtherChannel (LACP) | Backbone + Data Center | Agregación de ancho de banda |
-| Fibra óptica | Backbone Core1(SW) ↔ Core2(SW) | GigE1/1/1-2 (PC1) - EtherChannel LACP | Enlace de alta velocidad |
-| Enlace Serial | Backbone Core3 | Serial0/0/0 (módulo WIC-2T) | Simulación WAN |
+| **EtherChannel (LACP)** | **Backbone + Data Center** | **Agregación de ancho de banda** |
+| — Port-channel1 | Backbone: Core1↔Core2 | Fibra óptica, 2 Gbps |
+| — **Port-channel1** | **Data Center: SW-DIST-DC→SW-ACC-BD** | **2 Gbps distribución** |
+| — **Port-channel3** | **Data Center: SW-DIST-DC→SW-ACC-WEB** | **2 Gbps distribución** |
+| — Enlaces simples | Data Center: Servidores y NOC | Acceso normal (suficiente) |
+| Enlace Serial | Backbone Core3 | Simulación WAN |
 | VLSM | Todas las sedes | Optimización de direcciones IP |
 | FLSM /30 | Backbone P2P | Direccionamiento de enlaces |
 
@@ -330,8 +356,8 @@ Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel 
 | 9–10 | 21–22/04 | Sede Occidente: VLANs, VTP, Router-on-a-Stick |
 | 11–12 | 23–24/04 | Sede Norte: Anillo, Rapid PVST+, Root Bridge |
 | 13–14 | 25–26/04 | Sede Oriente: HSRP con MS1 y MS2 |
-| 15 | 27/04 | Data Center: EtherChannel LACP, rutas estáticas |
-| 16 | 28/04 | Pruebas de conectividad extremo a extremo, failover |
+| 15 | 27/04 | Data Center: VLANs (manual, sin VTP), EtherChannel Po1 y Po3 (distribución), enlaces simples a servidores |
+| 16 | 28/04 | Pruebas de conectividad extremo a extremo, failover, EtherChannel |
 | 17 | 29/04 | Documentación final, README.md, capturas de pantalla |
 
 ---
@@ -376,7 +402,12 @@ Los servidores manejan ráfagas masivas de tráfico. Se implementa EtherChannel 
 
 ### Data Center
 - [ ] VLANs 14, 24, 34 creadas y nombradas
-- [ ] EtherChannel LACP (mínimo 2 interfaces)
+- [ ] Configuración MANUAL de VLANs (SIN VTP, por seguridad)
+- [ ] EtherChannel LACP Port-channel1: SW-DIST-DC ↔ SW-ACC-BD (trunk, 2 Gbps) ⭐
+- [ ] EtherChannel LACP Port-channel3: SW-DIST-DC ↔ SW-ACC-WEB (trunk, 2 Gbps) ⭐
+- [ ] Enlace simple (sin EtherChannel): SW-ACC-BD ↔ Servidores Core_BD (acceso VLAN 14)
+- [ ] Enlace simple (sin EtherChannel): SW-ACC-WEB ↔ Servidores Web_Apps (acceso VLAN 24)
+- [ ] Enlace simple (sin EtherChannel): SW-DIST-DC ↔ SW-ACC-NOC (trunk, monitoreo bajo tráfico)
 - [ ] Rutas estáticas en R-Central1 y R-Central2
 - [ ] Redistribución estáticas → OSPF en R-Central1
 - [ ] Mínimo 7 hosts por área

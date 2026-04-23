@@ -499,15 +499,30 @@ El uso de rutas estáticas (en lugar de protocolos dinámicos) es una decisión 
     (estáticas→OSPF)   (estáticas)
           |                  |
           └────────┬──────────┘
-              [SW-DIST-DC]
-              ║ ║  (EtherChannel LACP — 2 cables)
-              ║ ║
-         [SW-ACC-BD]   [SW-ACC-WEB]   [SW-ACC-NOC]
-          VLAN 14        VLAN 24        VLAN 34
-         (Core_BD)      (Web_Apps)      (NOC)
+         [SW-DIST-DC]
+          / ║ ║ \
+         /  ║ ║  \
+    (Po1) (Po3) (Eth)
+        |     |   |
+   [SW-ACC-BD] [SW-ACC-WEB] [SW-ACC-NOC]
+     | (Eth)   | (Eth)      | (Eth)
+     |         |             |
+  SERV-BD1  SERV-WEB1  Monitoreo
+  SERV-BD2  SERV-WEB2
 ```
 
+**Arquitectura de EtherChannel en el Data Center:**
+- **Port-channel1 (LACP):** SW-DIST-DC ↔ SW-ACC-BD (enlace de distribución, 2 Gbps) ⭐
+- **Port-channel3 (LACP):** SW-DIST-DC ↔ SW-ACC-WEB (enlace de distribución, 2 Gbps) ⭐
+- **Enlace simple:** SW-ACC-BD ↔ Servidores Core_BD (acceso normal)
+- **Enlace simple:** SW-ACC-WEB ↔ Servidores Web_Apps (acceso normal)
+- **Enlace simple:** SW-DIST-DC ↔ SW-ACC-NOC (monitoreo, sin EtherChannel)
+
+> 📝 **EtherChannel SOLO en distribución (Po1, Po3):** Duplican ancho de banda entre switches. Enlaces a servidores son simples.
+
 ### 9.3 Configuración EtherChannel
+
+#### Port-channel1: SW-DIST-DC ↔ SW-ACC-BD (Enlace de Distribución)
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -516,10 +531,42 @@ El uso de rutas estáticas (en lugar de protocolos dinámicos) es una decisión 
 | Port-channel | Po1 |
 | Tipo de enlace | Trunk 802.1Q |
 | VLANs permitidas | 14, 24, 34 |
+| Ancho de banda | 2 Gbps (agregación) |
+
+#### Port-channel3: SW-DIST-DC ↔ SW-ACC-WEB (Enlace de Distribución)
+
+| Parámetro | Valor |
+|-----------|-------|
+| Modo | LACP (activo en ambos extremos) |
+| Interfaces | GigabitEthernet0/3 y GigabitEthernet0/4 |
+| Port-channel | Po3 |
+| Tipo de enlace | Trunk 802.1Q |
+| VLANs permitidas | 14, 24, 34 |
+| Ancho de banda | 2 Gbps (agregación) |
+
+#### Enlace Simple: SW-ACC-BD ↔ Servidores Core_BD (Acceso)
+
+| Parámetro | Valor |
+|-----------|-------|
+| Puerto | GigabitEthernet0/3 |
+| Tipo de enlace | Acceso (VLAN 14) |
+| VLAN | 14 (Core_BD) |
+| Ancho de banda | 1 Gbps (simple) |
+
+#### Enlace Simple: SW-ACC-WEB ↔ Servidores Web_Apps (Acceso)
+
+| Parámetro | Valor |
+|-----------|-------|
+| Puerto | GigabitEthernet0/3 |
+| Tipo de enlace | Acceso (VLAN 24) |
+| VLAN | 24 (Web_Apps) |
+| Ancho de banda | 1 Gbps (simple) |
+
+> 📝 **Conclusión:** EtherChannel SOLO en distribución (Po1, Po3 entre switches). Enlaces a servidores son simples (suficientes para monitoreo).
 
 ### 9.4 Captura de Topología Data Center
 
-> 📸 **[INSERTAR CAPTURA: Topología física del Data Center mostrando los dos cables del EtherChannel]**
+> 📸 **[INSERTAR CAPTURA: Topología física del Data Center mostrando los dos cables de EtherChannel en distribución]**
 
 ### 9.5 Capturas EtherChannel
 
@@ -669,11 +716,12 @@ router ospf 1
 
 ---
 
-### 10.5 SW-DIST-DC — EtherChannel LACP (Data Center)
+### 10.5 SW-DIST-DC — EtherChannel LACP (Distributor)
 
 ```
 hostname SW-DIST-DC
 !
+! === Port-channel1 a SW-ACC-BD (trunk) ===
 interface range GigabitEthernet0/1 - 2
  channel-group 1 mode active
  no shutdown
@@ -682,13 +730,168 @@ interface Port-channel1
  switchport mode trunk
  switchport trunk allowed vlan 14,24,34
  no shutdown
+!
+! === Port-channel3 a SW-ACC-WEB (trunk) ===
+interface range GigabitEthernet0/3 - 4
+ channel-group 3 mode active
+ no shutdown
+!
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+!
+! === Enlace normal a SW-ACC-NOC (trunk, sin EtherChannel) ===
+interface GigabitEthernet0/5
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
 ```
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel detail` en SW-DIST-DC]**
+### 10.6 SW-ACC-BD — Enlace simple a Servidores Core_BD (acceso)
+
+```
+hostname SW-ACC-BD
+!
+! === Recibe Port-channel1 desde SW-DIST-DC (trunk) ===
+interface Port-channel1
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+!
+! === Enlace simple hacia Servidores de Base de Datos (acceso VLAN 14) ===
+interface GigabitEthernet0/3
+ switchport mode access
+ switchport access vlan 14
+ description Enlace-Servidores-Core-BD
+ no shutdown
+```
+
+### 10.6b SW-ACC-WEB — Enlace simple a Servidores Web_Apps (acceso)
+
+```
+hostname SW-ACC-WEB
+!
+! === Recibe Port-channel3 desde SW-DIST-DC (trunk) ===
+interface Port-channel3
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+!
+! === Enlace simple hacia Servidores de Banca Virtual (acceso VLAN 24) ===
+interface GigabitEthernet0/3
+ switchport mode access
+ switchport access vlan 24
+ description Enlace-Servidores-Web-Apps
+ no shutdown
+```
+
+### 10.6c SW-ACC-NOC — Enlace Simple (SIN EtherChannel)
+
+```
+hostname SW-ACC-NOC
+!
+! === Recibe enlace simple desde SW-DIST-DC (trunk) ===
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 14,24,34
+ no shutdown
+!
+! === Acceso a hosts de NOC (VLAN 34) ===
+interface range GigabitEthernet0/2 - 5
+ switchport mode access
+ switchport access vlan 34
+ no shutdown
+```
+
+**Justificación:**
+- Enlaces simples a servidores: suficientes para monitoreo
+- **EtherChannel solo en distribución:** Po1 (BD) y Po3 (WEB) duplican ancho de banda entre switches
+
+> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — deben aparecer Po1 (SU) y Po3 (SU)]**
+
+> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-ACC-BD — deben aparecer Po1 (SU)]**
+
+> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-ACC-WEB — deben aparecer Po3 (SU)]**
 
 ---
 
-### 10.6 SW-CORE-NORTE — Root Bridge (Norte)
+### 10.7 R-Central1 — Redistribución Estáticas → OSPF (Inciso 5.4 del PDF) ⭐
+
+```
+hostname R-Central1
+!
+interface GigabitEthernet0/0
+ description ENLACE-BACKBONE-Core1
+ ip address 10.10.0.30 255.255.255.252
+ no shutdown
+!
+! === Rutas estáticas hacia Data Center ===
+ip route 192.168.40.0 255.255.255.0 192.168.40.254
+!
+! === OSPF (redistribución de estáticas hacia backbone) ===
+router ospf 1
+ router-id 5.5.5.5
+ network 10.10.0.28 0.0.0.3 area 0
+ redistribute static subnets
+!
+exit
+```
+
+**Justificación del inciso 5.4:**
+> "Dado que este segmento usa enrutamiento estático, el estudiante debe asegurar que R-Central1 redistribuya o propague estas rutas hacia el OSPF del backbone."
+
+R-Central1 anuncia la red 192.168.40.0/24 (Data Center completo) a todos los routers OSPF del backbone. Esto permite que sedes Occidente, Norte y Oriente accedan al Data Center.
+
+> 📸 **[INSERTAR CAPTURA: `show ip route ospf` en Core1 — debe aparecer ruta O 192.168.40.0/24 desde R-Central1]**
+
+---
+
+### 10.8 R-Central2 — Router-on-a-Stick (Gateway de VLANs Data Center)
+
+```
+hostname R-Central2
+!
+! === Enlace trunk hacia SW-DIST-DC ===
+interface GigabitEthernet0/0
+ description ENLACE-SW-DIST-DC-TRUNK
+ no ip address
+ no shutdown
+!
+! === Subinterfaz VLAN 14 (Core_BD) ===
+interface GigabitEthernet0/0.14
+ encapsulation dot1Q 14
+ ip address 192.168.40.33 255.255.255.240
+ description Gateway-VLAN14-Core_BD
+ no shutdown
+!
+! === Subinterfaz VLAN 24 (Web_Apps) ===
+interface GigabitEthernet0/0.24
+ encapsulation dot1Q 24
+ ip address 192.168.40.1 255.255.255.224
+ description Gateway-VLAN24-Web_Apps
+ no shutdown
+!
+! === Subinterfaz VLAN 34 (NOC) ===
+interface GigabitEthernet0/0.34
+ encapsulation dot1Q 34
+ ip address 192.168.40.49 255.255.255.240
+ description Gateway-VLAN34-NOC
+ no shutdown
+!
+exit
+```
+
+**Justificación:**
+- R-Central2 proporciona los **gateways de capa 3** para las tres VLANs del Data Center
+- Su interfaz GigabitEthernet0/0 conecta al **SW-DIST-DC** con un enlace trunk 802.1Q
+- Las subinterfaces enrutan el tráfico inter-VLAN dentro del segmento Data Center
+
+> 📸 **[INSERTAR CAPTURA: `show ip interface brief` en R-Central2 — subinterfaces .14, .24, .34 activas]**
+
+---
+
+### 10.9 SW-CORE-NORTE — Root Bridge (Norte)
 
 ```
 hostname SW-CORE-NORTE
@@ -787,7 +990,19 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 ### 11.5 Verificación EtherChannel Data Center
 
+#### Port-channel1 (SW-DIST-DC ↔ SW-ACC-BD)
+
 > 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — Port-channel1 en estado SU]**
+
+#### Port-channel3 (SW-DIST-DC ↔ SW-ACC-WEB)
+
+> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — Port-channel3 en estado SU]**
+
+#### Verificación de enlaces a servidores
+
+> 📸 **[INSERTAR CAPTURA: `show interface GigabitEthernet0/3` en SW-ACC-BD — estado UP/UP (acceso a servidores)]**
+
+> 📸 **[INSERTAR CAPTURA: `show interface GigabitEthernet0/3` en SW-ACC-WEB — estado UP/UP (acceso a servidores)]**
 
 ---
 
@@ -801,15 +1016,31 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 ## 12. Conclusiones
 
-1. **Backbone con redistribución múltiple:** La implementación de OSPF como protocolo backbone con redistribución hacia EIGRP, RIPv2 y rutas estáticas permite la interoperabilidad entre dominios de enrutamiento heterogéneos, simulando un entorno bancario real donde coexisten redes heredadas y modernas.
+1. **Backbone con redistribución múltiple:** La implementación de OSPF como protocolo backbone con redistribución hacia EIGRP, RIPv2 y rutas estáticas permite la interoperabilidad entre dominios de enrutamiento heterogéneos.
 
-2. **Segmentación eficiente con VLSM:** El uso de VLSM permitió asignar bloques de direcciones ajustados a la cantidad real de hosts de cada VLAN, optimizando el espacio de direccionamiento del bloque 192.168.0.0/16 y reduciendo el desperdicio de IPs.
+2. **Segmentación eficiente con VLSM:** El uso de VLSM permitió asignar bloques de direcciones ajustados a cada VLAN, optimizando direccionamiento.
 
-3. **Alta disponibilidad en múltiples capas:** Se implementaron mecanismos de redundancia en cada nivel: EtherChannel en el backbone y Data Center (Capa 1-2), Rapid PVST+ en Norte (Capa 2), y HSRP en Oriente (Capa 3), garantizando que ningún fallo aislado de hardware genere una interrupción de servicio total.
+3. **Alta disponibilidad en múltiples capas:** 
+   - **EtherChannel en distribución** (Po1, Po3): Duplican ancho de banda entre switches (2 Gbps)
+   - **Rapid PVST+ en Norte:** Redundancia de enlace con convergencia rápida
+   - **HSRP en Oriente:** Redundancia de gateway
+   - **Rutas estáticas en Data Center:** Seguridad estricta
 
-4. **VTP como herramienta de administración centralizada:** La configuración de VTP en modo Server/Client en Occidente y Norte simplifica enormemente la gestión de VLANs: cualquier cambio en el servidor se propaga automáticamente a todos los switches cliente, reduciendo el riesgo de inconsistencias de configuración.
+4. **EtherChannel en Data Center:** ⭐
+   - **Port-channel1 (BD):** SW-DIST-DC ↔ SW-ACC-BD (distribución)
+   - **Port-channel3 (WEB):** SW-DIST-DC ↔ SW-ACC-WEB (distribución)
+   - **Enlaces simples a servidores:** GigE a BD y WEB (suficientes para monitoreo)
+   - Mejor eficiencia: agregación donde más se necesita (entre switches)
 
-5. **Decisiones arquitectónicas justificadas:** Cada topología elegida responde específicamente al contexto operativo de su sede. La estrella en Occidente prioriza la simplicidad y el aislamiento. El triángulo en Norte prioriza la redundancia de Capa 2. La estrella dual en Oriente prioriza la disponibilidad del gateway. El EtherChannel en el Data Center prioriza el ancho de banda para cargas masivas de tráfico transaccional.
+5. **VTP solo en sedes comerciales, NO en Data Center:**
+   - **Occidente y Norte:** VTP Server/Client para gestión centralizada de VLANs
+   - **Data Center:** Configuración MANUAL por seguridad estricta
+
+6. **Arquitecturas por sede:**
+   - **Occidente:** Estrella jerárquica → simplicidad + aislamiento
+   - **Norte:** Triángulo (anillo) → redundancia de Capa 2
+   - **Oriente:** Estrella dual → disponibilidad de gateway
+   - **Data Center:** Distribución con EtherChannel + rutas estáticas → seguridad
 
 ---
 
