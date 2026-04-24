@@ -225,33 +225,7 @@ El Backbone Nacional de BanTech GT representa el núcleo transaccional que inter
 - **Core3 (Router):** Puertos: GigE0/0 (Core1), GigE0/1 (Core2), GigE0/2 (MS1), GigE0/3 (MS2), Serial0/0/0 (WAN)
 ### 5.2 Topología del Backbone
 
-```
-                          BACKBONE NACIONAL — BanTech GT
-                          ================================
-
-    R-Occidente                                              R-Norte
-    (EIGRP AS100)                                          (RIPv2)
-         |                                                      |
-    10.10.0.14                                            10.10.0.18
-         |                                                      |
-    10.10.0.13                                            10.10.0.17
-         |                                                      |
-       [Core1]═══════════════[Core2]══════════════════════[Core3]
-    router-id 1.1.1.1    router-id 2.2.2.2           router-id 3.3.3.3
-         ║ (EtherChannel/fibra)  ║ (Ethernet)              ║
-         ╚═══════════════════════╝                     Serial WAN
-                                                            |
-                                                  ┌────────┴────────┐
-                                                [MS1]            [MS2]
-                                              (HSRP Active)   (HSRP Standby)
-                                                        ORIENTE
-         |                       |
-    R-Central1              R-Central2
-    (Estáticas→OSPF)       (Estáticas)
-         |                       |
-         └───────┬───────────────┘
-           DATA CENTER
-```
+> 📸 **[INSERTAR CAPTURA: Vista completa del backbone en Packet Tracer]**
 
 ### 5.3 Dominios de Enrutamiento
 
@@ -279,11 +253,6 @@ El Backbone Nacional de BanTech GT representa el núcleo transaccional que inter
 | Core2 (SW) ↔ Core3 (Router) | Ethernet Gigabit (redundancia) | GigE1/1/3 ↔ GigE0/1 | 1 Gbps |
 | Core3 (Router) ↔ Serial WAN | Enlace Serial (WIC-2T) | Serial0/0/0 | 64 Kbps (simulación WAN) |
 | Backbone ↔ Sedes | Ethernet Gigabit | GigE1/1/4-5 (Core1/2) ↔ GigE0/x | 1 Gbps |
-
-### 5.6 Topología implementada en Packet Tracer
-
-> 📸 **[INSERTAR CAPTURA: Vista completa del backbone en Packet Tracer]**
-
 ---
 
 ## 6. Sede Occidente — Agencia Regional Comercial
@@ -318,20 +287,9 @@ La decisión de asignar **switches dedicados a Cajas y Asesores**, pero **compar
 
 **Ventajas de tolerancia a fallos:** Si un switch de acceso falla, únicamente el segmento de esa área queda afectado. Las demás VLANs continúan operando con normalidad a través del switch de distribución.
 
-### 6.2 Diagrama Lógico
+### 6.2 Topologia de la sede Occidente
 
-```
-        R-Occidente
-       (Router-on-a-Stick)
-        GigE0/1 (trunk)
-             |
-        [SW-DIST-OCC]  ← VTP Server, dominio bantech04
-        /    |    \
-       /     |     \
-  [SW-CAJAS] [SW-ASESORES] [SW-GERENCIA-SEG]
-  VLAN 14    VLAN 24       VLAN 34 + VLAN 44
-  (trunk)    (trunk)       (trunk)
-```
+> 📸 **[INSERTAR CAPTURA: Vista completa de la topología occidente en Packet Tracer]**
 
 ### 6.3 Dispositivos de la Sede
 
@@ -355,10 +313,6 @@ La decisión de asignar **switches dedicados a Cajas y Asesores**, pero **compar
 | SW-ASESORES | Fa0/1-8 | **Acceso** | 24 (Asesores) |
 | SW-GERENCIA-SEG | Fa0/1-5 | **Acceso** | 34 (Gerencia) |
 | SW-GERENCIA-SEG | Fa0/6-10 | **Acceso** | 44 (Seguridad) |
-
-### 6.5 Captura de Topología Occidente
-
-> 📸 **[INSERTAR CAPTURA: Topología física de Sede Occidente en Packet Tracer]**
 
 ### 6.6 Captura de Configuración VTP
 
@@ -385,22 +339,6 @@ El triángulo crea bucles físicos **intencionales** que garantizan que si cualq
 Se eligió **SW-CORE-NORTE como Root Bridge** porque es el switch con conexión directa a R-Norte (router de borde hacia el backbone). Al ser el root, los demás switches calcularán sus caminos de costo mínimo convergiendo hacia él, lo que garantiza que el tráfico hacia el backbone siempre tome el camino más eficiente.
 
 **Ventajas de tolerancia a fallos:** Cualquiera de los tres enlaces del triángulo puede fallar sin que la red pierda conectividad. Rapid PVST+ converge en menos de 2 segundos, minimizando la interrupción del servicio de autorización de créditos.
-
-### 7.2 Diagrama Lógico
-
-```
-        R-Norte
-        GigE0/1 (trunk)
-             |
-     [SW-CORE-NORTE]  ← Root Bridge (priority 4096)
-      /              \
-     / (trunk)   (trunk)\
- [SW-DIST-N1]──────[SW-DIST-N2]  ← Enlace crea el bucle
-  (trunk)       (priority 8192)
-     |               |
-[SW-ACC-ANALISIS] [SW-ACC-AUDIT]  [SW-ACC-LEGAL]
-  VLAN 54         VLAN 64         VLAN 74
-```
 
 ### 7.3 Dispositivos de la Sede
 
@@ -434,22 +372,6 @@ Se implementó una **topología en estrella dual** con los switches de acceso co
 El protocolo **HSRP (Hot Standby Router Protocol)** crea una IP virtual por cada VLAN. Los hosts configuran esta IP virtual como su gateway, por lo que son completamente transparentes al proceso de failover. MS1 opera como router **Activo** (prioridad 110) y MS2 como **Standby** (prioridad 100). Cuando MS1 falla, MS2 asume el rol activo en aproximadamente 3 segundos, y el tráfico de los hosts continúa fluyendo sin necesidad de reconfigurar nada en los equipos finales.
 
 El uso de `preempt` en MS1 garantiza que cuando MS1 se recupere, automáticamente retome el rol activo sin intervención manual.
-
-### 8.2 Diagrama Lógico
-
-```
-         BACKBONE
-        /         \
-    [MS1]         [MS2]         ← HSRP: MS1 Active, MS2 Standby
-    10.10.0.22    10.10.0.26
-    VLAN84: .66   VLAN84: .67
-    VLAN94: .2    VLAN94: .3
-         \         /
-          \       /
-      [SW-BOVEDA]  [SW-PLATAFORMA]
-       VLAN 84      VLAN 94
-    (conectado a MS1 y MS2)
-```
 
 **Gateways HSRP (IP virtual):**
 - VLAN 84 (Bóveda): `192.168.30.65`
@@ -491,25 +413,6 @@ Se implementó una **arquitectura de dos capas** (distribución + acceso) con **
 El **EtherChannel LACP** entre SW-DIST-DC y SW-ACC-BD agrega 2 interfaces físicas en un solo canal lógico, duplicando el ancho de banda disponible (2 Gbps en lugar de 1 Gbps) y proporcionando redundancia: si uno de los cables físicos falla, el tráfico continúa por el cable restante sin interrupción.
 
 El uso de rutas estáticas (en lugar de protocolos dinámicos) es una decisión de seguridad deliberada: solo las rutas explícitamente configuradas pueden entrar o salir de este segmento, reduciendo la superficie de ataque frente a inyección de rutas maliciosas. R-Central1 redistribuye estas rutas hacia OSPF de forma controlada.
-
-### 9.2 Diagrama Lógico
-
-```
-    R-Central1          R-Central2
-    (estáticas→OSPF)   (estáticas)
-          |                  |
-          └────────┬──────────┘
-         [SW-DIST-DC]
-          / ║ ║ \
-         /  ║ ║  \
-    (Po1) (Po3) (Eth)
-        |     |   |
-   [SW-ACC-BD] [SW-ACC-WEB] [SW-ACC-NOC]
-     | (Eth)   | (Eth)      | (Eth)
-     |         |             |
-  SERV-BD1  SERV-WEB1  Monitoreo
-  SERV-BD2  SERV-WEB2
-```
 
 **Arquitectura de EtherChannel en el Data Center:**
 - **Port-channel1 (LACP):** SW-DIST-DC ↔ SW-ACC-BD (enlace de distribución, 2 Gbps) ⭐
