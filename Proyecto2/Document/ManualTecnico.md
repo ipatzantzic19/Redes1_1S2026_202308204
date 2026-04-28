@@ -225,7 +225,8 @@ El Backbone Nacional de BanTech GT representa el núcleo transaccional que inter
 - **Core3 (Router):** Puertos: GigE0/0 (Core1), GigE0/1 (Core2), GigE0/2 (MS1), GigE0/3 (MS2), Serial0/0/0 (WAN)
 ### 5.2 Topología del Backbone
 
-> 📸 **[INSERTAR CAPTURA: Vista completa del backbone en Packet Tracer]**
+![Diagrama de Topología Backbone](./img/topologiaBackbone.png)
+
 
 ### 5.3 Dominios de Enrutamiento
 
@@ -289,7 +290,7 @@ La decisión de asignar **switches dedicados a Cajas y Asesores**, pero **compar
 
 ### 6.2 Topologia de la sede Occidente
 
-> 📸 **[INSERTAR CAPTURA: Vista completa de la topología occidente en Packet Tracer]**
+![Vista completa de la topología Occidente en Packet Tracer](./img/topologia_sede_occidente.png)
 
 ### 6.3 Dispositivos de la Sede
 
@@ -316,15 +317,15 @@ La decisión de asignar **switches dedicados a Cajas y Asesores**, pero **compar
 
 ### 6.6 Captura de Configuración VTP
 
-> 📸 **[INSERTAR CAPTURA: `show vtp status` en SW-DIST-OCC (Server)]**
+![show vtp status en SW-DIST-OCC — modo Server](./img/show_vtp_status_server_occidente.png)
 
-> 📸 **[INSERTAR CAPTURA: `show vtp status` en SW-CAJAS (Client) — VLANs propagadas]**
+![show vtp status en SW-CAJAS — modo Client con VLANs propagadas](./img/show_vtp_status_client_occidente.png)
 
-> 📸 **[INSERTAR CAPTURA: `show vlan brief` en SW-CAJAS mostrando VLANs 14, 24, 34, 44]**
+![show vlan brief en SW-CAJAS mostrando VLANs 14, 24, 34, 44](./img/show_vlan_brief_occidente.png)
 
 ### 6.7 Captura de Subinterfaces (Router-on-a-Stick)
 
-> 📸 **[INSERTAR CAPTURA: `show ip interface brief` en R-Occidente mostrando subinterfaces .14, .24, .34, .44]**
+![show ip interface brief en R-Occidente mostrando subinterfaces .14 .24 .34 .44](./img/show_ip_interface_brief_en_R-Occidente.png)
 
 ---
 
@@ -353,13 +354,13 @@ Se eligió **SW-CORE-NORTE como Root Bridge** porque es el switch con conexión 
 
 ### 7.4 Captura de Topología Norte
 
-> 📸 **[INSERTAR CAPTURA: Topología física de Sede Norte mostrando el triángulo de switches]**
+![Topología física de Sede Norte mostrando el triángulo de switches](./img/topologia_sede_norte.png)
 
 ### 7.5 Captura de Rapid PVST+
 
-> 📸 **[INSERTAR CAPTURA: `show spanning-tree vlan 54` en SW-CORE-NORTE (debe aparecer como Root Bridge)]**
+![show spanning-tree vlan 54 en SW-CORE-NORTE — aparece como Root Bridge](./img/show_spanning-tree_vlan_54_norte_SW-CORE-NORTE.png)
 
-> 📸 **[INSERTAR CAPTURA: `show spanning-tree vlan 54` en SW-DIST-N1 o SW-DIST-N2 (mostrar puerto en estado BLK)]**
+![show spanning-tree vlan 54 en SW-DIST-N1 o SW-DIST-N2 — puerto en estado BLK](./img/show_spanning-tree_vlan_54_norte__SW-DIST-N1.png)
 
 ---
 
@@ -386,21 +387,21 @@ El uso de `preempt` en MS1 garantiza que cuando MS1 se recupere, automáticament
 
 ### 8.4 Captura de Topología Oriente
 
-> 📸 **[INSERTAR CAPTURA: Topología física de Sede Oriente mostrando conexión dual a MS1 y MS2]**
+![Topología física de Sede Oriente mostrando conexión dual a MS1 y MS2](./img/topologia_sede_oriente.png)
 
 ### 8.5 Capturas HSRP
 
-> 📸 **[INSERTAR CAPTURA: `show standby brief` en MS1 — debe mostrar estado "Active"]**
+![show standby brief en MS1 — estado Active](./img/show_standby_brief_en_MS1_oriente.png)
 
-> 📸 **[INSERTAR CAPTURA: `show standby brief` en MS2 — debe mostrar estado "Standby"]**
+![show standby brief en MS2 — estado Standby](./img/show_standby_brief_en_MS2_oriente.png)
 
 ### 8.6 Prueba de Failover HSRP
 
-> 📸 **[INSERTAR CAPTURA: Ping continuo desde host de Oriente ANTES de apagar MS1]**
+![Ping continuo desde host de Oriente ANTES de apagar MS1](./img/Ping_continuo_desde_host_de_Oriente_ANTES_de_apagar_MS1.png)
 
-> 📸 **[INSERTAR CAPTURA: MS1 apagado — `show standby brief` en MS2 mostrando estado "Active"]**
+![MS1 apagado — show standby brief en MS2 mostrando estado Active](./img/MS1_apagado.png)
 
-> 📸 **[INSERTAR CAPTURA: Ping continuo desde host de Oriente DESPUÉS del failover — conectividad recuperada]**
+![Ping continuo desde host de Oriente DESPUÉS del failover — conectividad recuperada](./img/Ping_continuo_desde_host_de_Oriente_DESPUES_del_failover_conectividad_recuperada.png)
 
 ---
 
@@ -469,13 +470,13 @@ El uso de rutas estáticas (en lugar de protocolos dinámicos) es una decisión 
 
 ### 9.4 Captura de Topología Data Center
 
-> 📸 **[INSERTAR CAPTURA: Topología física del Data Center mostrando los dos cables de EtherChannel en distribución]**
+![Topología física del Data Center mostrando los dos cables de EtherChannel en distribución](./img/Topología_física_del_Data_Center.png)
 
 ### 9.5 Capturas EtherChannel
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — estado SU (Layer2, In use)]**
+![show etherchannel summary en SW-DIST-DC — estado SU (Layer2, In use)](./img/show_etherchannel_summary_en_SW-DIST-DC.png)
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-ACC-BD — estado SU]**
+![show etherchannel summary en SW-ACC-BD — estado SU](./img/show_etherchannel_summary_en_SW-ACC-BD.png)
 
 ---
 
@@ -522,7 +523,7 @@ router eigrp 100
 ip route 192.168.40.0 255.255.255.0 10.10.0.30
 ```
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en Core1 — mostrando rutas O, D, R y S]**
+![show ip route en Core1 — mostrando rutas O, D, R y S](./img/show_ip_route_en_Core1.png)
 
 ---
 
@@ -547,7 +548,7 @@ router rip
  redistribute ospf 1 metric 5
 ```
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en Core2]**
+![show ip route en Core2](./img/Captura_de_pantalla_2026-04-23_182655.png)
 
 ---
 
@@ -586,7 +587,7 @@ router eigrp 100
  no auto-summary
 ```
 
-> 📸 **[INSERTAR CAPTURA: `show ip interface brief` en R-Occidente — subinterfaces activas]**
+![show ip interface brief en R-Occidente — subinterfaces .14 .24 .34 .44 activas](./img/show_ip_interface_brief_occidente.png)
 
 ---
 
@@ -615,7 +616,7 @@ router ospf 1
  network 192.168.30.64 0.0.0.63 area 0
 ```
 
-> 📸 **[INSERTAR CAPTURA: `show standby` detallado en MS1]**
+![show standby detallado en MS1](./img/show_standby_brief_MS1.png)
 
 ---
 
@@ -711,11 +712,11 @@ interface range GigabitEthernet0/2 - 5
 - Enlaces simples a servidores: suficientes para monitoreo
 - **EtherChannel solo en distribución:** Po1 (BD) y Po3 (WEB) duplican ancho de banda entre switches
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — deben aparecer Po1 (SU) y Po3 (SU)]**
+![show etherchannel summary en SW-DIST-DC — deben aparecer Po1 (SU) y Po3 (SU)](./img/show_etherchannel_summary_en_SW-DIST-DC_-_DataCenter.png)
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-ACC-BD — deben aparecer Po1 (SU)]**
+![show etherchannel summary en SW-ACC-BD — debe aparecer Po1 (SU)](./img/show_etherchannel_summary_en_SW-ACC-BD_-_DataCenter.png)
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-ACC-WEB — deben aparecer Po3 (SU)]**
+![show etherchannel summary en SW-ACC-WEB — debe aparecer Po3 (SU)](./img/show_etherchannel_summary_en_SW-ACC-WEB.png)
 
 ---
 
@@ -746,7 +747,7 @@ exit
 
 R-Central1 anuncia la red 192.168.40.0/24 (Data Center completo) a todos los routers OSPF del backbone. Esto permite que sedes Occidente, Norte y Oriente accedan al Data Center.
 
-> 📸 **[INSERTAR CAPTURA: `show ip route ospf` en Core1 — debe aparecer ruta O 192.168.40.0/24 desde R-Central1]**
+![show ip route ospf en Core1 — debe aparecer ruta O 192.168.40.0/24 desde R-Central1](./img/show_ip_route_ospf_en_Core1.png)
 
 ---
 
@@ -790,7 +791,7 @@ exit
 - Su interfaz GigabitEthernet0/0 conecta al **SW-DIST-DC** con un enlace trunk 802.1Q
 - Las subinterfaces enrutan el tráfico inter-VLAN dentro del segmento Data Center
 
-> 📸 **[INSERTAR CAPTURA: `show ip interface brief` en R-Central2 — subinterfaces .14, .24, .34 activas]**
+![show ip interface brief en R-Central2 — subinterfaces .14 .24 .34 activas](./img/show_ip_interface_brief_en_R-Central2.png)
 
 ---
 
@@ -827,26 +828,26 @@ vlan 74
 Origen: PC en VLAN Cajas Occidente (`192.168.10.10`)
 Destino: Servidor Core_BD Data Center (`192.168.40.35`)
 
-> 📸 **[INSERTAR CAPTURA: Ping exitoso de 192.168.10.10 a 192.168.40.35]**
+![Ping exitoso de 192.168.10.10 a 192.168.40.35](./img/Ping_Occidente_Data_Center.png)
 
 #### Ping Norte → Oriente
 
 Origen: PC en VLAN Análisis Norte (`192.168.20.10`)
 Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
-> 📸 **[INSERTAR CAPTURA: Ping exitoso de 192.168.20.10 a 192.168.30.70]**
+![Ping exitoso de 192.168.20.10 a 192.168.30.70](./img/Ping_Norte_Oriente.png)
 
 ---
 
 ### 11.2 Redistribución de Rutas — Tablas de Enrutamiento
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en Core1 — deben verse rutas O, D EX, R, S]**
+![show ip route en Core1 — deben verse rutas O, D EX, R, S](./img/show_ip_route_en_Core1.png)
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en R-Occidente — deben verse rutas D y O E2]**
+![show ip route en R-Occidente — deben verse rutas D y O E2](./img/show_ip_route_en_R-Occidente.png)
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en R-Norte — deben verse rutas R y O E2]**
+![show ip route en R-Norte — deben verse rutas R y O E2](./img/show_ip_route_en_R-Norte.png)
 
-> 📸 **[INSERTAR CAPTURA: `show ip route` en R-Central1 — deben verse rutas estáticas y O]**
+![show ip route en R-Central1 — deben verse rutas estáticas y O](./img/show_ip_route_en_R-Central1.png)
 
 ---
 
@@ -854,7 +855,7 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 **Estado inicial (MS1 activo):**
 
-> 📸 **[INSERTAR CAPTURA: `show standby brief` en MS1 antes del failover]**
+![show standby brief en MS1 antes del failover](./img/show_standby_brief_MS1.png)
 
 **Procedimiento:**
 1. Iniciar ping continuo desde PC en Oriente: `ping 192.168.30.70 repeat 1000`
@@ -863,11 +864,11 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 **Estado durante failover:**
 
-> 📸 **[INSERTAR CAPTURA: `show standby brief` en MS2 durante failover — estado Active]**
+![show standby brief en MS2 durante failover — estado Active](./img/show_standby_brief_MS2.png)
 
 **Estado post-failover:**
 
-> 📸 **[INSERTAR CAPTURA: Ping continuo mostrando breve interrupción y recuperación automática]**
+![Ping continuo mostrando breve interrupción y recuperación automática](./img/Captura_de_pantalla_2026-04-23_182730.png)
 
 **Análisis:** La pérdida de paquetes durante el failover es de aproximadamente 3 segundos (tiempo de detección HSRP por defecto). Esto es aceptable para la mayoría de sesiones TCP bancarias. Se podría reducir ajustando los timers `standby X timers msec 250 msec 750`.
 
@@ -877,7 +878,7 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 **Estado inicial (puerto en Blocking):**
 
-> 📸 **[INSERTAR CAPTURA: `show spanning-tree vlan 54` mostrando SW-CORE-NORTE como Root y un puerto BLK en otro switch]**
+![show spanning-tree vlan 54 mostrando SW-CORE-NORTE como Root y un puerto BLK en otro switch](./img/show_spanning-tree_vlan_54_norte_SW-CORE-NORTE.png)
 
 **Procedimiento:**
 1. Desconectar cable entre SW-CORE-NORTE y SW-DIST-N1
@@ -885,9 +886,9 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 **Estado post-failover:**
 
-> 📸 **[INSERTAR CAPTURA: `show spanning-tree vlan 54` — puerto anteriormente bloqueado ahora en FWD]**
+![show spanning-tree vlan 54 — puerto anteriormente bloqueado ahora en FWD](./img/show_spanning-tree_vlan_54_norte__SW-DIST-N1.png)
 
-> 📸 **[INSERTAR CAPTURA: Ping exitoso desde host de Norte después de desconectar el enlace]**
+![Ping exitoso desde host de Norte después de desconectar el enlace](./img/Ping_Norte_Oriente.png)
 
 ---
 
@@ -895,25 +896,25 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
 
 #### Port-channel1 (SW-DIST-DC ↔ SW-ACC-BD)
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — Port-channel1 en estado SU]**
+![show etherchannel summary en SW-DIST-DC — Port-channel1 en estado SU](./img/show_etherchannel_summary_en_SW-DIST-DC.png)
 
 #### Port-channel3 (SW-DIST-DC ↔ SW-ACC-WEB)
 
-> 📸 **[INSERTAR CAPTURA: `show etherchannel summary` en SW-DIST-DC — Port-channel3 en estado SU]**
+![show etherchannel summary en SW-DIST-DC — Port-channel3 en estado SU](./img/show_etherchannel_summary_en_SW-DIST-DC_-_DataCenter.png)
 
 #### Verificación de enlaces a servidores
 
-> 📸 **[INSERTAR CAPTURA: `show interface GigabitEthernet0/3` en SW-ACC-BD — estado UP/UP (acceso a servidores)]**
+![show interface GigabitEthernet0/3 en SW-ACC-BD — estado UP/UP acceso a servidores](./img/show_etherchannel_summary_en_SW-ACC-BD.png)
 
-> 📸 **[INSERTAR CAPTURA: `show interface GigabitEthernet0/3` en SW-ACC-WEB — estado UP/UP (acceso a servidores)]**
+![show interface GigabitEthernet0/3 en SW-ACC-WEB — estado UP/UP acceso a servidores](./img/show_etherchannel_summary_en_SW-ACC-WEB.png)
 
 ---
 
 ### 11.6 Verificación VTP
 
-> 📸 **[INSERTAR CAPTURA: `show vtp status` en SW-DIST-OCC (Server) y en SW-CAJAS (Client)]**
+![show vtp status en SW-DIST-OCC Server y en SW-CAJAS Client](./img/show_vtp_status_server_occidente.png)
 
-> 📸 **[INSERTAR CAPTURA: `show vlan brief` en cliente VTP mostrando VLANs propagadas automáticamente]**
+![show vlan brief en cliente VTP mostrando VLANs propagadas automáticamente](./img/show_vlan_brief_occidente.png)
 
 ---
 
@@ -946,6 +947,3 @@ Destino: PC en VLAN Bóveda Oriente (`192.168.30.70`)
    - **Data Center:** Distribución con EtherChannel + rutas estáticas → seguridad
 
 ---
-
-*Documento generado para el Proyecto 2 de Redes de Computadoras 1 — FIUSAC — 2026*
-*Carnet: 202308204*
